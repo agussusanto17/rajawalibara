@@ -170,9 +170,9 @@ export default async function LayananPage() {
             </Reveal>
 
             <p className="mt-5 max-w-2xl text-[0.95rem] leading-relaxed text-muted-fg">
-              Nilai di atas kisaran tipikal. Hasil uji laboratorium kargo yang
-              bersangkutan diserahkan bersama penawaran — bukan menyusul
-              setelah kargo berangkat.
+              Angka di atas adalah kisaran tipikal, bukan komitmen kontrak.
+              Hasil uji laboratorium kargo yang bersangkutan diserahkan bersama
+              penawaran — bukan menyusul setelah kargo berangkat.
             </p>
           </>
         ) : (
