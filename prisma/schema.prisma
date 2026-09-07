@@ -1,0 +1,699 @@
+// Prisma 7: URL koneksi tidak lagi boleh berada di berkas ini. Ia ada di
+// prisma.config.ts untuk CLI/Migrate, dan diberikan ke PrismaClient lewat
+// driver adapter saat runtime. Lihat lib/db/index.ts.
+//
+// ---------------------------------------------------------------------------
+// CATATAN MySQL (berbeda dari basis PostgreSQL project asal)
+//
+// 1. `id` memakai @default(uuid()): MySQL tidak punya gen_random_uuid(), dan
+//    UUID()-nya menghasilkan v1 yang membocorkan waktu serta alamat MAC.
+//    Nilainya dibuat Prisma di sisi klien, kolomnya char(36).
+//
+// 2. String di MySQL memetakan ke VARCHAR(191), BUKAN TEXT seperti di
+//    PostgreSQL. Setiap kolom yang isinya bisa lebih panjang dari itu WAJIB
+//    diberi @db.Text atau @db.VarChar(n) — tanpa itu penyimpanan gagal di
+//    tengah jalan dengan galat yang tidak menyebut kolomnya.
+//
+// 3. Tidak ada @db.Timestamptz. DateTime memetakan ke DATETIME(3), dan
+//    seluruh waktu disimpan dalam UTC oleh driver.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/// Pesan yang masuk lewat formulir kontak.
+///
+/// Nama model dan field ditulis dengan gaya JavaScript, lalu dipetakan balik ke
+/// nama kolom asli lewat @map.
+enum StatusPesan {
+  BARU
+  DIPROSES
+  SELESAI
+}
+
+model PesanMasuk {
+  id String @id @default(uuid()) @db.Char(36)
+
+  nama       String
+  email      String
+  telepon    String?
+  organisasi String?
+  pesan      String @db.Text
+
+  /// Slug komoditas bila pengirim datang dari halaman produk tertentu.
+  produk   String?
+  /// Jalur halaman tempat formulir dikirim.
+  halaman  String?
+  /// utm_source, gclid, fbclid, dan sejenisnya, apa adanya.
+  kampanye String?
+
+  /// Tahap penanganan. Tanpa ini kotak masuk cuma catatan yang menumpuk, dan
+  /// tidak ada cara tahu mana yang sudah dibalas selain mengingatnya.
+  status StatusPesan @default(BARU)
+
+  /// Catatan internal, tidak pernah dikirim ke pengirim pesan.
+  catatan String? @db.Text
+
+  dibuatPada DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada DateTime? @updatedAt @map("diubah_pada")
+
+  /// Penghapusan lunak, sama seperti konten lain. Berbeda dari konten, isinya
+  /// data pribadi orang sungguhan: kalau pengirimnya meminta datanya dihapus,
+  /// menandainya saja TIDAK cukup — barisnya harus benar-benar dibuang.
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([dibuatPada], map: "pesan_masuk_dibuat_pada_idx")
+  @@index([status])
+  @@map("pesan_masuk")
+}
+
+// ===========================================================================
+// KONTEN
+//
+// Grup berulang di dalam satu entri (spesifikasi teknis, keunggulan, langkah,
+// galeri) disimpan sebagai Json, bukan tabel sendiri. Alasannya: data itu
+// selalu dibaca utuh bersama induknya, tidak pernah dikueri lintas entri, dan
+// memecahnya jadi lima tabel hanya menambah join tanpa satu pun manfaat kueri.
+// Ongkosnya jelas: basis data tidak lagi menjaga bentuknya, jadi bentuk itu
+// WAJIB divalidasi di lapisan tulis (lihat lib/cms/skema.ts) sebelum masuk.
+// ===========================================================================
+
+enum StatusTerbit {
+  DRAF
+  TERBIT
+}
+
+/// Berkas yang diunggah lewat CMS. Berkasnya sendiri berada di folder unggahan
+/// di luar direktori repo (lihat lib/cms/media.ts); baris ini menyimpan jalur
+/// relatifnya beserta metadata untuk menampilkannya.
+model Media {
+  id    String  @id @default(uuid()) @db.Char(36)
+  /// Jalur relatif berkas di folder unggahan, atau kosong bila gambarnya milik
+  /// pihak lain dan hanya ditautkan. Menjadi acuan saat berkas perlu dihapus;
+  /// yang kosong tidak pernah dihapus dari mana pun.
+  kunci String? @unique
+  /// Alamat yang dipakai di tag img. Untuk berkas milik sendiri berupa jalur
+  /// relatif /media/<kunci> yang dilayani route handler.
+  url   String  @db.VarChar(500)
+  /// Teks alternatif. Wajib diisi editor: gambar tanpa alt tidak terbaca
+  /// pembaca layar dan tidak terbaca mesin telusur.
+  alt    String @db.VarChar(300)
+  tipe   String
+  lebar  Int?
+  tinggi Int?
+  ukuran Int
+
+  dibuatPada DateTime @default(now()) @map("dibuat_pada")
+
+  artikel     Artikel[]
+  produkCover Produk[]     @relation("ProdukCover")
+  anggota     AnggotaTim[]
+  mitra       Mitra[]
+  berandaSatu Beranda[]    @relation("BerandaFotoSatu")
+  berandaDua  Beranda[]    @relation("BerandaFotoDua")
+  proyek      Proyek[]
+  slide       Slide[]
+  testimoni   Testimoni[]
+
+  /// Waktu penghapusan. Baris tidak pernah benar-benar dibuang: yang terhapus
+  /// hanya disembunyikan, sehingga salah klik bisa dipulihkan dan tidak ada
+  /// relasi yang tiba-tiba menunjuk baris yang lenyap.
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@map("media")
+}
+
+/// Kategori artikel sebagai data induk.
+///
+/// Kategori berupa teks bebas di tiap artikel membuat "Batubara" dan
+/// "batubara" menjadi dua kategori berbeda tanpa ada yang menyadarinya, dan
+/// saringan di halaman publik ikut pecah. Di sini nama itu hidup satu kali.
+model KategoriArtikel {
+  id     String @id @default(uuid()) @db.Char(36)
+  nama   String @unique
+  slug   String @unique
+  urutan Int    @default(0)
+
+  artikel Artikel[]
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@map("kategori_artikel")
+}
+
+model Artikel {
+  id       String       @id @default(uuid()) @db.Char(36)
+  slug     String       @unique
+  judul    String       @db.VarChar(300)
+  /// Ringkasan untuk kartu dan meta description. Dibatasi di lapisan tulis.
+  ringkas  String       @db.VarChar(300)
+  /// Naskah sebagai larik blok, sejajar dengan tipe BlokArtikel di lib/site.ts.
+  isi      Json
+  status   StatusTerbit @default(DRAF)
+  /// Ditonjolkan di halaman publik. Bukan pengganti status: artikel unggulan
+  /// yang masih draf tetap tidak tampil di mana pun.
+  unggulan Boolean      @default(false)
+
+  kategoriId String          @map("kategori_id") @db.Char(36)
+  kategori   KategoriArtikel @relation(fields: [kategoriId], references: [id])
+  /// Tanggal terbit yang ditampilkan. Terpisah dari dibuatPada supaya naskah
+  /// lama bisa dimasukkan dengan tanggal aslinya.
+  terbitPada DateTime?       @map("terbit_pada")
+
+  sampulId String? @map("sampul_id") @db.Char(36)
+  sampul   Media?  @relation(fields: [sampulId], references: [id], onDelete: SetNull)
+
+  seoJudul     String? @map("seo_judul")
+  seoDeskripsi String? @map("seo_deskripsi") @db.VarChar(300)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([status, terbitPada])
+  @@index([kategoriId])
+  @@index([unggulan])
+  @@map("artikel")
+}
+
+/// Jenis komoditas yang diperdagangkan. Logonya menyebut "Trading Mineral &
+/// Batubara", jadi daftarnya tidak dikunci ke batubara saja.
+enum JenisKomoditas {
+  BATUBARA
+  MINERAL
+}
+
+/// Satu tingkatan komoditas yang dijual, misalnya "Batubara GAR 4200".
+///
+/// Bentuknya mengikuti cara pembeli batubara membandingkan penawaran: yang
+/// dicari lebih dulu adalah tabel spesifikasi (kalori, total moisture, ash,
+/// sulfur, ukuran), bukan paragraf pemasaran. Karena itu `spesifikasi` adalah
+/// kolom wajib, sementara sisanya boleh kosong.
+model Produk {
+  id          String         @id @default(uuid()) @db.Char(36)
+  slug        String         @unique
+  /// Nama pendek untuk kartu dan menu, misalnya "GAR 4200".
+  nama        String
+  /// Nama lengkap untuk judul halaman, misalnya
+  /// "Batubara Kalori Rendah GAR 4200 kcal/kg".
+  namaPanjang String         @map("nama_panjang") @db.VarChar(300)
+  jenis       JenisKomoditas @default(BATUBARA)
+  ringkas     String         @db.VarChar(300)
+  deskripsi   String         @db.Text
+  /// Nama ikon dari daftar tertutup di components/site/icon-map.tsx.
+  /// Bukan teks bebas: nama yang tidak ada di peta itu tidak menampilkan apa
+  /// pun dan tidak memunculkan peringatan sama sekali.
+  ikon        String
+  /// Sektor yang memakainya, misalnya "PLTU, industri semen, smelter".
+  peruntukan  String         @db.VarChar(300)
+  /// Asal tambang beserta jaminan legalitasnya. Kosong berarti bagian itu
+  /// tidak dirender — bukan diisi klaim karangan.
+  asal        String         @db.Text
+
+  urutan Int          @default(0)
+  status StatusTerbit @default(DRAF)
+
+  /// Ditonjolkan sebagai kartu besar di beranda dan halaman produk.
+  ///
+  /// Ditandai sendiri, bukan disimpulkan dari ada tidaknya sampul: menyimpulkan
+  /// berarti mengunggah foto diam-diam memindahkan komoditas ke bagian
+  /// unggulan — perubahan yang tidak diminta dan tidak diberitahukan.
+  ///
+  /// Bukan pengganti status: yang masih draf tetap tidak tampil. Sampul wajib
+  /// ada, dan itu ditegakkan saat menyimpan di CMS.
+  unggulan Boolean @default(false)
+
+  /// [{ parameter, nilai, satuan }] — tabel spesifikasi teknis. Nilainya teks,
+  /// bukan angka: sebagian parameter ditulis sebagai rentang ("4200 – 4400")
+  /// atau batas ("maks. 1%"), dan memaksanya jadi bilangan menutup keduanya.
+  spesifikasi Json
+  /// [{ icon, title, body }] — keunggulan tingkatan ini.
+  keunggulan  Json    @default("[]")
+  /// [{ src, caption }] — kosong berarti halaman menampilkan slot bertanda.
+  galeri      Json    @default("[]")
+  /// [{ title, body }] — alur pemesanan. Kosong berarti memakai langkah umum.
+  langkah     Json    @default("[]")
+
+  /// Pembeli yang memakai komoditas ini.
+  ///
+  /// Relasi, bukan daftar tertanam: satu organisasi membeli beberapa tingkatan,
+  /// dan menyalin nama beserta logonya ke tiap entri membuat satu klien punya
+  /// beberapa salinan yang bisa berselisih. Mengganti logo di satu tempat kini
+  /// mengubahnya di semua tempat sekaligus.
+  ///
+  /// Kosong berarti halaman menampilkan slot bertanda, bukan logo karangan.
+  mitra Mitra[] @relation("MitraProduk")
+
+  sampulId String? @map("sampul_id") @db.Char(36)
+  sampul   Media?  @relation("ProdukCover", fields: [sampulId], references: [id], onDelete: SetNull)
+
+  seoJudul     String? @map("seo_judul")
+  seoDeskripsi String? @map("seo_deskripsi") @db.VarChar(300)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([status, urutan])
+  @@map("produk")
+}
+
+enum KelompokOrang {
+  PIMPINAN
+  TIM
+}
+
+model AnggotaTim {
+  id       String        @id @default(uuid()) @db.Char(36)
+  nama     String
+  jabatan  String
+  kelompok KelompokOrang @default(TIM)
+  /// Hanya dipakai kartu pimpinan. Kosong berarti kartu tampil tanpa paragraf.
+  bio      String?       @db.Text
+  urutan   Int           @default(0)
+
+  fotoId String? @map("foto_id") @db.Char(36)
+  foto   Media?  @relation(fields: [fotoId], references: [id], onDelete: SetNull)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([kelompok, urutan])
+  @@map("anggota_tim")
+}
+
+/// Klien yang pernah dilayani. Namanya "mitra" karena dipakai juga untuk mitra
+/// tambang dan logistik, bukan pembeli saja.
+model Mitra {
+  id     String @id @default(uuid()) @db.Char(36)
+  nama   String
+  /// Sektor klien: bumn | industri | energi | manufaktur | tambang | logistik.
+  /// Menggantikan "tingkat" (provinsi/kota/kabupaten) dari project asal, yang
+  /// hanya masuk akal untuk klien pemerintahan.
+  sektor String
+  urutan Int    @default(0)
+
+  logoId String? @map("logo_id") @db.Char(36)
+  logo   Media?  @relation(fields: [logoId], references: [id], onDelete: SetNull)
+
+  produk Produk[] @relation("MitraProduk")
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@map("mitra")
+}
+
+/// Data perusahaan. Baris tunggal: `id` dikunci ke nilai tetap supaya tidak
+/// pernah ada dua baris yang saling bertentangan.
+///
+/// Alamat TIDAK ada di sini. Perusahaan ini punya kantor pusat di Jakarta dan
+/// cabang di Samarinda; menyimpan salah satunya sebagai "alamat perusahaan"
+/// berarti yang lain hidup di tempat lain dan pasti berselisih. Lihat Kantor.
+model Perusahaan {
+  id            String @id @default("tunggal")
+  nama          String
+  namaLegal     String @map("nama_legal")
+  tagline       String @db.VarChar(300)
+  /// Nomor Induk Berusaha. Pengenal usaha yang bisa dicek siapa pun di
+  /// oss.go.id, dan satu-satunya angka di halaman ini yang tidak bisa
+  /// dikarang — karena itu ia yang dipajang, bukan klaim "terpercaya".
+  /// Kosong berarti pita legalitas tidak menampilkan barisnya.
+  nib           String @default("")
+  berdiri       Int
+  intro         String @db.Text
+  telepon       String
+  whatsapp      String @db.VarChar(300)
+  email         String
+  visi          String @db.Text
+  sejarah       String @db.Text
+  latarBelakang String @map("latar_belakang") @db.Text
+
+  diubahPada DateTime @updatedAt @map("diubah_pada")
+
+  @@map("perusahaan")
+}
+
+enum JenisKantor {
+  PUSAT
+  CABANG
+}
+
+/// Kantor perusahaan. Daftar, bukan kolom di Perusahaan: ada dua alamat sejak
+/// awal, dan cabang bertambah tanpa perlu migrasi.
+model Kantor {
+  id            String      @id @default(uuid()) @db.Char(36)
+  jenis         JenisKantor @default(CABANG)
+  /// Label yang tampil, misalnya "Kantor Pusat" atau "Kantor Cabang Samarinda".
+  nama          String
+  alamat        String      @db.Text
+  /// Versi satu baris untuk footer dan kartu kontak.
+  alamatSingkat String      @map("alamat_singkat") @db.VarChar(300)
+  telepon       String?
+  email         String?
+  /// Penanda tempat di Google Maps. Kosong berarti peta tidak dirender.
+  mapsCid String @map("maps_cid") @default("")
+  mapsLat Float  @map("maps_lat") @default(0)
+  mapsLng Float  @map("maps_lng") @default(0)
+
+  urutan Int @default(0)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([urutan])
+  @@map("kantor")
+}
+
+/// Satu foto latar di slider hero beranda.
+///
+/// Yang berganti hanya fotonya; judul dan tombol hero TIDAK ikut berganti.
+/// Judul yang berubah tiap lima detik tidak sempat dibaca sampai habis, dan
+/// pengunjung yang baru mulai membaca kalimat kedua kehilangan kalimat
+/// pertamanya. Copy hero tinggal di model Beranda, satu untuk semua slide.
+model Slide {
+  id String @id @default(uuid()) @db.Char(36)
+
+  /// Wajib. Slide tanpa foto tidak punya isi sama sekali — yang tersisa hanya
+  /// latar kosong yang terbaca sebagai gambar gagal dimuat.
+  fotoId String @map("foto_id") @db.Char(36)
+  foto   Media  @relation(fields: [fotoId], references: [id])
+
+  /// Keterangan pendek di sudut bawah, misalnya "Pemuatan tongkang, Samarinda".
+  /// Kosong berarti tidak dirender — bukan diisi keterangan karangan di bawah
+  /// foto yang belum tentu diambil di tempat itu.
+  keterangan String?
+
+  urutan Int @default(0)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([urutan])
+  @@map("slide")
+}
+
+/// Copy beranda. Baris tunggal, sama seperti Perusahaan.
+model Beranda {
+  id                  String @id @default("tunggal")
+  pitaTag             String @map("pita_tag")
+  pitaTeks            String @map("pita_teks") @db.VarChar(300)
+  pitaTautan          String @map("pita_tautan")
+  /// Penanda [[...]] dirender sebagai sorotan warna merek. Bukan rich text
+  /// bebas: gaya sembarang di judul display merusak tipografinya.
+  judul               String @db.VarChar(500)
+  intro               String @db.Text
+  /// Label panjang tampil dari lebar sm ke atas; label pendek menggantikannya
+  /// di layar sempit, tempat dua tombol berdampingan tidak muat.
+  ctaUtamaLabel       String @map("cta_utama_label")
+  ctaUtamaLabelPendek String @map("cta_utama_label_pendek")
+  ctaUtamaHref        String @map("cta_utama_href")
+  ctaKeduaLabel       String @map("cta_kedua_label")
+  ctaKeduaLabelPendek String @map("cta_kedua_label_pendek")
+  ctaKeduaHref        String @map("cta_kedua_href")
+  manifesto           String @db.Text
+
+  fotoSatuId String? @map("foto_satu_id") @db.Char(36)
+  fotoSatu   Media?  @relation("BerandaFotoSatu", fields: [fotoSatuId], references: [id], onDelete: SetNull)
+  fotoDuaId  String? @map("foto_dua_id") @db.Char(36)
+  fotoDua    Media?  @relation("BerandaFotoDua", fields: [fotoDuaId], references: [id], onDelete: SetNull)
+
+  diubahPada DateTime @updatedAt @map("diubah_pada")
+
+  @@map("beranda")
+}
+
+/// Angka yang muncul di beberapa tempat. Disimpan sekali supaya hero dan
+/// section klien tidak pernah menyebut angka yang berbeda.
+model Statistik {
+  id String @id @default("tunggal")
+
+  /// Jumlah organisasi yang dilayani. Satu-satunya angka di sini yang tidak
+  /// bisa dihitung sendiri: tabel mitra belum berisi data lengkapnya.
+  ///
+  /// jumlahProduk dan jumlahTim SENGAJA tidak ada di sini. Keduanya dihitung
+  /// langsung dari tabel produk dan anggota_tim. Menyimpannya juga berarti dua
+  /// sumber untuk angka yang sama, dan yang satu pasti tertinggal saat entri
+  /// ditambah — tanpa ada yang menyadarinya.
+  jumlahKlien Int @map("jumlah_klien")
+
+  diubahPada DateTime @updatedAt @map("diubah_pada")
+
+  @@map("statistik")
+}
+
+/// SEO per halaman statis, dikunci lewat jalur rutenya.
+model SeoHalaman {
+  jalur     String  @id
+  judul     String?
+  deskripsi String? @db.VarChar(300)
+
+  diubahPada DateTime @updatedAt @map("diubah_pada")
+
+  @@map("seo_halaman")
+}
+
+// ===========================================================================
+// BLOK KONTEN HALAMAN
+//
+// Isi yang sebelumnya berupa literal di lib/site.ts. Semuanya daftar berurut
+// yang jarang berubah tetapi harus bisa diubah tanpa deploy.
+// ===========================================================================
+
+/// Lima daftar yang bentuknya sama persis: sederet butir berurut dengan judul
+/// dan isi. Disatukan dalam satu tabel karena memecahnya menjadi lima tabel
+/// yang kolomnya identik hanya menambah kode tanpa menambah kejelasan.
+enum JenisBlok {
+  NILAI
+  MISI
+  ALASAN
+  LANGKAH
+  FAQ
+}
+
+model BlokKonten {
+  id    String    @id @default(uuid()) @db.Char(36)
+  jenis JenisBlok
+
+  /// Nama ikon dari daftar tertutup di components/site/icon-map.tsx.
+  /// Kosong pada MISI, LANGKAH, dan FAQ: ketiganya tampil bernomor.
+  ikon String?
+
+  /// Pada FAQ kolom ini berisi pertanyaannya.
+  judul  String @db.VarChar(300)
+  /// Pada FAQ kolom ini berisi jawabannya.
+  isi    String @db.Text
+  urutan Int    @default(0)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([jenis, urutan])
+  @@map("blok_konten")
+}
+
+/// Tonggak perjalanan perusahaan. Terpisah dari BlokKonten karena punya tahun,
+/// dan tahun itulah yang mengurutkan serta menjadi penanda visualnya.
+model Perjalanan {
+  id     String @id @default(uuid()) @db.Char(36)
+  tahun  String
+  judul  String @db.VarChar(300)
+  isi    String @db.Text
+  urutan Int    @default(0)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([urutan])
+  @@map("perjalanan")
+}
+
+/// Pekerjaan yang pernah dijalankan, untuk bagian "Proyek Kami".
+///
+/// Fotonya menunjuk ke tabel media, bukan menyimpan jalur sebagai teks: yang
+/// dipakai halaman adalah alt-nya juga, dan jalur telanjang membuat berkas
+/// yatim tidak pernah bisa ditelusuri balik ke pemakainya.
+model Proyek {
+  id      String  @id @default(uuid()) @db.Char(36)
+  judul   String  @db.VarChar(300)
+  /// Kosong berarti lokasinya tidak dirender, bukan ditulis "-".
+  lokasi  String?
+  tahun   String?
+  ringkas String? @db.Text
+  urutan  Int     @default(0)
+
+  fotoId String? @map("foto_id") @db.Char(36)
+  foto   Media?  @relation(fields: [fotoId], references: [id], onDelete: SetNull)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([urutan])
+  @@map("proyek")
+}
+
+/// Kutipan dari klien. Tabelnya kosong sampai ada testimoni yang benar-benar
+/// diberikan dan diizinkan untuk ditampilkan; bagian ini di situs menampilkan
+/// slot bertanda selama kosong, bukan kutipan karangan.
+model Testimoni {
+  id         String @id @default(uuid()) @db.Char(36)
+  kutipan    String @db.Text
+  nama       String
+  peran      String
+  organisasi String
+  urutan     Int    @default(0)
+
+  /// Menandai baris sebagai contoh, bukan kutipan sungguhan.
+  ///
+  /// Penandanya melekat pada barisnya, bukan pada "daftarnya masih kosong":
+  /// begitu satu testimoni asli masuk, penanda seluruh daftar akan mati dan
+  /// sisa contohnya diam-diam tampil seolah asli. Kartu bertanda ini dirender
+  /// bergaris putus-putus.
+  contoh Boolean @default(false)
+
+  fotoId String? @map("foto_id") @db.Char(36)
+  foto   Media?  @relation(fields: [fotoId], references: [id], onDelete: SetNull)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([urutan])
+  @@map("testimoni")
+}
+
+/// Bidang usaha sesuai NIB/KBLI. Teks resmi, bukan bahasa pemasaran: yang
+/// tampil ke pengunjung adalah GrupLayanan, sedangkan daftar ini yang
+/// dirujuknya sebagai bukti legalitas.
+model Layanan {
+  id     String @id @default(uuid()) @db.Char(36)
+  nama   String @unique @db.VarChar(300)
+  urutan Int    @default(0)
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([urutan])
+  @@map("layanan")
+}
+
+/// Pengelompokan bidang usaha menjadi bahasa yang bisa dibaca pengunjung.
+/// Inilah "Layanan Kami" di company profile.
+model GrupLayanan {
+  id     String @id @default(uuid()) @db.Char(36)
+  ikon   String
+  judul  String @db.VarChar(300)
+  isi    String @db.Text
+  urutan Int    @default(0)
+
+  /// Butir yang dicakup grup ini, sebagai daftar teks.
+  /// Sengaja bukan relasi: nilainya disalin apa adanya ke tampilan, dan relasi
+  /// di sini menambah tabel penghubung tanpa ada yang menanyakannya balik.
+  cakupan Json @default("[]")
+
+  dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
+  diubahPada  DateTime  @updatedAt @map("diubah_pada")
+  dihapusPada DateTime? @map("dihapus_pada")
+
+  @@index([urutan])
+  @@map("grup_layanan")
+}
+
+// ===========================================================================
+// AUTENTIKASI (Better Auth)
+//
+// Bentuk tabel di bawah diambil langsung dari getAuthTables() pada versi
+// better-auth yang terpasang, bukan dari dokumentasi: dokumentasi bisa
+// mendahului atau tertinggal dari paketnya, dan selisih satu kolom di sini
+// membuat login gagal dengan cara yang sulit dilacak.
+//
+// `id` sengaja tanpa default basis data. Better Auth membuat sendiri
+// pengenalnya, jadi kolom ini hanya menerima nilai dari sana.
+//
+// Kolom token diberi @db.Text. Di MySQL, String memetakan ke VARCHAR(191),
+// sementara JWT dan refresh token rutin melewati angka itu — tanpa @db.Text
+// tokennya terpotong dan sesinya gagal tanpa pesan yang menyebut sebabnya.
+// ===========================================================================
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?  @db.VarChar(500)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?  @db.Text
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  /// Ruang nama identitas. Bersama accountId membentuk kunci unik gabungan.
+  issuer                String
+  accountId             String
+  providerId            String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  /// Hash sandi untuk masuk lewat surel. Bukan sandi mentah.
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([issuer, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String   @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@index([identifier])
+  @@map("verification")
+}
