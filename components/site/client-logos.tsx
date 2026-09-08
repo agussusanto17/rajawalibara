@@ -73,14 +73,14 @@ export async function ClientLogos({ terang = false }: { terang?: boolean }) {
             ) : c ? (
               <span
                 key={c.name}
-                className={`flex h-14 shrink-0 items-center whitespace-nowrap px-6 text-sm font-semibold ${t.teks}`}
+                className={`flex h-16 shrink-0 items-center whitespace-nowrap px-6 text-sm font-semibold sm:h-20 ${t.teks}`}
               >
                 {c.name}
               </span>
             ) : (
               <div
                 key={i}
-                className={`flex h-14 w-40 shrink-0 items-center justify-center rounded-lg border border-dashed sm:w-48 ${t.slot}`}
+                className={`flex h-16 w-40 shrink-0 items-center justify-center rounded-lg border border-dashed sm:h-20 sm:w-48 ${t.slot}`}
               >
                 <span className={`text-xs ${t.slotTeks}`}>Logo mitra</span>
               </div>
