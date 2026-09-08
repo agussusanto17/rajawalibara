@@ -3,6 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { GridLines } from "@/components/site/section";
 import { JsonLd } from "@/components/site/json-ld";
 import { breadcrumbSchema } from "@/lib/seo";
+import { tautan, type Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 
 export type FaktaHero = {
   label: string;
@@ -28,6 +30,7 @@ export function PageHero({
   eyebrow,
   title,
   description,
+  bahasa,
   breadcrumb,
   fakta = [],
   aksi,
@@ -35,10 +38,12 @@ export function PageHero({
   eyebrow?: string;
   title: string;
   description?: string;
+  bahasa: Bahasa;
   breadcrumb?: { label: string; href?: string }[];
   fakta?: FaktaHero[];
   aksi?: React.ReactNode;
 }) {
+  const t = teks(bahasa);
   return (
     <section className="relative overflow-hidden border-b border-line">
       {/* Penanda remah roti ditempel di sini, bukan di tiap halaman: datanya
@@ -47,7 +52,7 @@ export function PageHero({
       {breadcrumb && breadcrumb.length > 0 && (
         <JsonLd
           data={breadcrumbSchema([
-            { name: "Home", path: "/" },
+            { name: t.umum.beranda, path: tautan(bahasa, "/") },
             ...breadcrumb.map((c) => ({ name: c.label, path: c.href ?? "" })),
           ])}
         />
@@ -65,16 +70,16 @@ export function PageHero({
       <div className="shell relative grid gap-12 pb-16 pt-32 sm:pb-20 sm:pt-40 lg:grid-cols-[1.35fr_auto] lg:gap-20">
         <div>
           {breadcrumb && breadcrumb.length > 0 && (
-            <nav aria-label="Breadcrumb" className="mb-8">
+            <nav aria-label={t.umum.remahRoti} className="mb-8">
               <ol className="flex flex-wrap items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-fg">
                 <li>
                   {/* Padding negatif menambah tinggi sentuh dari 15px ke 31px
                       tanpa merenggangkan barisnya. */}
                   <Link
-                    href="/"
+                    href={tautan(bahasa, "/")}
                     className="-my-2 inline-block py-2 transition-colors hover:text-brand"
                   >
-                    Home
+                    {t.umum.beranda}
                   </Link>
                 </li>
                 {breadcrumb.map((c) => (
@@ -82,7 +87,7 @@ export function PageHero({
                     <ChevronRight className="size-3 opacity-50" aria-hidden="true" />
                     {c.href ? (
                       <Link
-                        href={c.href}
+                        href={tautan(bahasa, c.href)}
                         className="-my-2 inline-block py-2 transition-colors hover:text-brand"
                       >
                         {c.label}

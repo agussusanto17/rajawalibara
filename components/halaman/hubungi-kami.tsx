@@ -65,6 +65,7 @@ export async function HubungiKami({ bahasa }: { bahasa: Bahasa }) {
   return (
     <>
       <PageHero
+        bahasa={bahasa}
         eyebrow={t.kontak.heroEyebrow}
         title={t.kontak.heroJudul}
         description={t.kontak.heroIsi}

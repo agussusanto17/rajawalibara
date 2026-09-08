@@ -55,6 +55,7 @@ export async function TentangKami({ bahasa }: { bahasa: Bahasa }) {
   return (
     <>
       <PageHero
+        bahasa={bahasa}
         eyebrow={isiPola(t.tentang.heroEyebrow, { tahun: company.founded })}
         title={t.tentang.heroJudul}
         description={t.tentang.heroIsi}

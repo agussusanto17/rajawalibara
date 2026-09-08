@@ -70,10 +70,11 @@ export async function Layanan({ bahasa }: { bahasa: Bahasa }) {
       ))}
 
       <PageHero
+        bahasa={bahasa}
         eyebrow={t.layanan.heroEyebrow}
         title={menu[2].label}
         description={t.layanan.heroIsi}
-        breadcrumb={[{ label: "Layanan" }]}
+        breadcrumb={[{ label: menu[2].label }]}
       />
 
       {/* 1 -------------------------------------------------- Kelompok layanan */}
