@@ -95,6 +95,8 @@ function usePenyimpan() {
  */
 type Perusahaan = {
   nama: string; namaLegal: string; tagline: string; nib: string; berdiri: number;
+  taglineEn: string | null; introEn: string | null; visiEn: string | null;
+  sejarahEn: string | null; latarBelakangEn: string | null;
   intro: string; telepon: string; whatsapp: string; email: string;
   visi: string; sejarah: string; latarBelakang: string;
 };
@@ -103,6 +105,8 @@ const PERUSAHAAN_KOSONG: Perusahaan = {
   nama: "", namaLegal: "", tagline: "", nib: "", berdiri: new Date().getFullYear(),
   intro: "", telepon: "", whatsapp: "", email: "",
   visi: "", sejarah: "", latarBelakang: "",
+  taglineEn: null, introEn: null, visiEn: null,
+  sejarahEn: null, latarBelakangEn: null,
 };
 
 export function FormPerusahaan({ awal }: { awal: Perusahaan | null }) {
@@ -110,6 +114,38 @@ export function FormPerusahaan({ awal }: { awal: Perusahaan | null }) {
   const { galat, pesan, sukses, jalan, simpan } = usePenyimpan();
   const u = <K extends keyof Perusahaan>(k: K, v: Perusahaan[K]) =>
     setN((x) => ({ ...x, [k]: v }));
+
+  /**
+   * Isian terjemahan.
+   *
+   * Dibiarkan kosong berarti belum diterjemahkan, dan halaman /en menampilkan
+   * teks Indonesianya. Itu keadaan yang sah — bukan galat — jadi isian ini
+   * tidak pernah wajib, dan kosong disimpan sebagai NULL bukan string kosong.
+   */
+  const teksEn = (k: keyof Perusahaan, label: string, baris = 1) => (
+    <div>
+      <label htmlFor={`p-${k}`} className={LABEL}>
+        {label} <span className="font-normal text-muted-fg">· English</span>
+      </label>
+      {baris > 1 ? (
+        <textarea
+          id={`p-${k}`}
+          rows={baris}
+          value={String(n[k] ?? "")}
+          onChange={(e) => u(k, (e.target.value || null) as never)}
+          className={`${ISIAN} mt-2 resize-y`}
+        />
+      ) : (
+        <input
+          id={`p-${k}`}
+          value={String(n[k] ?? "")}
+          onChange={(e) => u(k, (e.target.value || null) as never)}
+          className={`${ISIAN} mt-2`}
+        />
+      )}
+      <Galat peta={galat} k={k} />
+    </div>
+  );
 
   const teks = (k: keyof Perusahaan, label: string, baris = 1) => (
     <div>
@@ -142,6 +178,7 @@ export function FormPerusahaan({ awal }: { awal: Perusahaan | null }) {
         {teks("nama", "Nama pendek")}
         {teks("namaLegal", "Nama legal")}
         {teks("tagline", "Tagline")}
+        {teksEn("taglineEn", "Tagline")}
         {teks("nib", "NIB")}
         <div>
           <label htmlFor="p-berdiri" className={LABEL}>Tahun berdiri</label>
@@ -157,6 +194,7 @@ export function FormPerusahaan({ awal }: { awal: Perusahaan | null }) {
       </div>
 
       {teks("intro", "Intro", 3)}
+      {teksEn("introEn", "Intro", 3)}
 
       <div className="grid gap-6 sm:grid-cols-2">
         {teks("telepon", "Telepon")}
@@ -165,8 +203,11 @@ export function FormPerusahaan({ awal }: { awal: Perusahaan | null }) {
       {teks("whatsapp", "Tautan WhatsApp")}
 
       {teks("visi", "Visi", 3)}
+      {teksEn("visiEn", "Visi", 3)}
       {teks("sejarah", "Sejarah", 5)}
+      {teksEn("sejarahEn", "Sejarah", 5)}
       {teks("latarBelakang", "Latar belakang", 4)}
+      {teksEn("latarBelakangEn", "Latar belakang", 4)}
 
       <p className="rounded-lg border border-line bg-surface/50 px-4 py-3 text-xs leading-relaxed text-muted-fg">
         Alamat kantor disunting di bagian <strong className="text-white">Kantor</strong>,
@@ -184,6 +225,10 @@ export function FormPerusahaan({ awal }: { awal: Perusahaan | null }) {
 /* --------------------------------------------------------------- Beranda --*/
 
 type Beranda = {
+  pitaTagEn: string | null; pitaTeksEn: string | null; judulEn: string | null;
+  introEn: string | null; manifestoEn: string | null;
+  ctaUtamaLabelEn: string | null; ctaUtamaLabelPendekEn: string | null;
+  ctaKeduaLabelEn: string | null; ctaKeduaLabelPendekEn: string | null;
   pitaTag: string; pitaTeks: string; pitaTautan: string; judul: string;
   intro: string;
   ctaUtamaLabel: string; ctaUtamaLabelPendek: string; ctaUtamaHref: string;
@@ -194,6 +239,9 @@ type Beranda = {
 };
 
 const BERANDA_KOSONG: Beranda = {
+  pitaTagEn: null, pitaTeksEn: null, judulEn: null, introEn: null,
+  manifestoEn: null, ctaUtamaLabelEn: null, ctaUtamaLabelPendekEn: null,
+  ctaKeduaLabelEn: null, ctaKeduaLabelPendekEn: null,
   pitaTag: "", pitaTeks: "", pitaTautan: "", judul: "", intro: "",
   ctaUtamaLabel: "", ctaUtamaLabelPendek: "", ctaUtamaHref: "",
   ctaKeduaLabel: "", ctaKeduaLabelPendek: "", ctaKeduaHref: "",
@@ -207,6 +255,30 @@ export function FormBeranda({ awal }: { awal: Beranda | null }) {
   const { galat, pesan, sukses, jalan, simpan } = usePenyimpan();
   const u = <K extends keyof Beranda>(k: K, v: Beranda[K]) =>
     setN((x) => ({ ...x, [k]: v }));
+
+  /** Isian terjemahan beranda. Kosong disimpan sebagai NULL. */
+  const enB = (k: keyof Beranda, label: string, baris = 1) => (
+    <div>
+      <label htmlFor={`be-${k}`} className={LABEL}>{label}</label>
+      {baris > 1 ? (
+        <textarea
+          id={`be-${k}`}
+          rows={baris}
+          value={String(n[k] ?? "")}
+          onChange={(e) => u(k, (e.target.value || null) as never)}
+          className={`${ISIAN} mt-2 resize-y`}
+        />
+      ) : (
+        <input
+          id={`be-${k}`}
+          value={String(n[k] ?? "")}
+          onChange={(e) => u(k, (e.target.value || null) as never)}
+          className={`${ISIAN} mt-2`}
+        />
+      )}
+      <Galat peta={galat} k={k} />
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -324,6 +396,33 @@ export function FormBeranda({ awal }: { awal: Beranda | null }) {
           }
         />
       </div>
+
+      {/* Terjemahan dikumpulkan di satu blok, bukan disisipkan berselang-seling
+          di antara isian Indonesianya. Formulir beranda sudah panjang, dan
+          isian yang berganti-ganti bahasa tiap baris membuat penyunting
+          kehilangan tempat. Seluruhnya boleh kosong: kosong berarti belum
+          diterjemahkan, dan halaman /en memakai teks Indonesianya. */}
+      <details className="rounded-xl border border-line bg-surface/40">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white">
+          Terjemahan bahasa Inggris
+          <span className="ml-2 font-normal text-muted-fg">
+            · boleh dikosongkan
+          </span>
+        </summary>
+        <div className="flex flex-col gap-5 border-t border-line p-4">
+          {enB("judulEn", "Judul hero", 2)}
+          {enB("introEn", "Intro hero", 3)}
+          {enB("manifestoEn", "Manifesto", 5)}
+          <div className="grid gap-5 sm:grid-cols-2">
+            {enB("pitaTagEn", "Label pita")}
+            {enB("pitaTeksEn", "Teks pita")}
+            {enB("ctaUtamaLabelEn", "Label CTA utama")}
+            {enB("ctaUtamaLabelPendekEn", "Label pendek CTA utama")}
+            {enB("ctaKeduaLabelEn", "Label CTA kedua")}
+            {enB("ctaKeduaLabelPendekEn", "Label pendek CTA kedua")}
+          </div>
+        </div>
+      </details>
 
       <div className="flex justify-end">
         <Simpan jalan={jalan} sukses={sukses} onKlik={() => simpan(() => simpanBeranda(n))} />

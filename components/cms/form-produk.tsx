@@ -21,6 +21,12 @@ export type NilaiProduk = {
   ikon: string;
   peruntukan: string;
   asal: string;
+  namaEn: string | null;
+  namaPanjangEn: string | null;
+  ringkasEn: string | null;
+  deskripsiEn: string | null;
+  peruntukanEn: string | null;
+  asalEn: string | null;
   urutan: number;
   status: "DRAF" | "TERBIT";
   unggulan: boolean;
@@ -92,6 +98,33 @@ export function FormProduk({
       else router.refresh();
     });
   }
+
+  /**
+   * Isian terjemahan. Kosong disimpan sebagai NULL, artinya belum
+   * diterjemahkan — halaman /en memakai teks Indonesianya.
+   */
+  const en = (k: keyof NilaiProduk, label: string, baris = 1) => (
+    <div>
+      <label htmlFor={`en-${k}`} className={LABEL}>{label}</label>
+      {baris > 1 ? (
+        <textarea
+          id={`en-${k}`}
+          rows={baris}
+          value={String(nilai[k] ?? "")}
+          onChange={(e) => ubah(k, (e.target.value || null) as never)}
+          className={`${ISIAN} mt-2 resize-y`}
+        />
+      ) : (
+        <input
+          id={`en-${k}`}
+          value={String(nilai[k] ?? "")}
+          onChange={(e) => ubah(k, (e.target.value || null) as never)}
+          className={`${ISIAN} mt-2`}
+        />
+      )}
+      <Galat peta={galat} k={k} />
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -477,6 +510,29 @@ export function FormProduk({
             </div>
           )}
         />
+
+        {/* --------------------------------------------------- Terjemahan */}
+        {/* Angka spesifikasi sengaja TIDAK punya isian terjemahan di sini.
+            Parameter dan satuannya boleh dialihbahasakan lewat seed, tetapi
+            angkanya harus sama di kedua bahasa: dua bahasa yang menyebut nilai
+            kalor berbeda untuk kargo yang sama adalah sengketa kontrak, bukan
+            salah ketik. */}
+        <details className="rounded-xl border border-line bg-surface/40">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white">
+            Terjemahan bahasa Inggris
+            <span className="ml-2 font-normal text-muted-fg">
+              · boleh dikosongkan
+            </span>
+          </summary>
+          <div className="flex flex-col gap-5 border-t border-line p-4">
+            {en("namaEn", "Nama pendek")}
+            {en("namaPanjangEn", "Nama panjang")}
+            {en("ringkasEn", "Ringkasan", 2)}
+            {en("deskripsiEn", "Deskripsi", 5)}
+            {en("peruntukanEn", "Peruntukan")}
+            {en("asalEn", "Asal tambang", 3)}
+          </div>
+        </details>
 
         {/* --------------------------------------------------------- Mitra */}
         <fieldset>

@@ -1,19 +1,18 @@
 import type { Orang, Product, Spesifikasi } from "@/lib/site";
-import {
-  alasanKami,
-  beranda,
-  company,
-  faqUmum,
-  kantor,
-  langkahMulai,
-  misi,
-  perjalanan,
-  serviceGroups,
-  services,
-  values,
-} from "@/lib/site";
+import * as naskahId from "@/lib/site";
+import * as naskahEn from "@/lib/site.en";
+import { pilih, pilihJson, type Bahasa } from "@/lib/bahasa";
 import { HIDUP } from "@/lib/cms/saring";
 import { db } from "@/lib/db";
+
+/**
+ * Naskah cadangan untuk satu bahasa.
+ *
+ * Dipakai ketika tabelnya masih kosong atau basis datanya tidak terjangkau.
+ * Bentuk kedua modul dijamin sama oleh tipe `Teks<>` di lib/site.en.ts, jadi
+ * pemilihan di sini tidak perlu memeriksa keberadaan field satu per satu.
+ */
+const naskah = (bahasa: Bahasa) => (bahasa === "en" ? naskahEn : naskahId);
 
 /**
  * Pembacaan konten untuk halaman publik.
@@ -48,6 +47,14 @@ type BarisProduk = {
   spesifikasi: unknown;
   keunggulan: unknown;
   galeri: unknown;
+  namaEn: string | null;
+  namaPanjangEn: string | null;
+  ringkasEn: string | null;
+  deskripsiEn: string | null;
+  peruntukanEn: string | null;
+  asalEn: string | null;
+  spesifikasiEn: unknown;
+  keunggulanEn: unknown;
   mitra: { nama: string; logo: { url: string } | null }[];
   langkah: unknown;
   sampul: { url: string } | null;
@@ -57,18 +64,18 @@ type BarisProduk = {
  *  publik tidak boleh meledak hanya karena satu grup kosong atau rusak. */
 const larik = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
-const keProduct = (p: BarisProduk): Product => ({
+const keProduct = (bahasa: Bahasa, p: BarisProduk): Product => ({
   slug: p.slug,
-  name: p.nama,
-  full: p.namaPanjang,
+  name: pilih(bahasa, p.nama, p.namaEn),
+  full: pilih(bahasa, p.namaPanjang, p.namaPanjangEn),
   jenis: p.jenis,
-  summary: p.ringkas,
-  description: p.deskripsi,
+  summary: pilih(bahasa, p.ringkas, p.ringkasEn),
+  description: pilih(bahasa, p.deskripsi, p.deskripsiEn),
   icon: p.ikon,
-  audience: p.peruntukan,
-  asal: p.asal,
-  specs: larik<Spesifikasi>(p.spesifikasi),
-  why: larik(p.keunggulan),
+  audience: pilih(bahasa, p.peruntukan, p.peruntukanEn),
+  asal: pilih(bahasa, p.asal, p.asalEn),
+  specs: pilihJson(bahasa, larik<Spesifikasi>(p.spesifikasi), p.spesifikasiEn),
+  why: pilihJson(bahasa, larik(p.keunggulan), p.keunggulanEn),
   gallery: larik(p.galeri),
   // Nama dan logo diambil dari baris Mitra, bukan disalin ke tiap produk:
   // satu organisasi memakai beberapa tingkatan, dan salinan pasti berselisih.
@@ -95,6 +102,14 @@ const PILIH_PRODUK = {
   spesifikasi: true,
   keunggulan: true,
   galeri: true,
+  namaEn: true,
+  namaPanjangEn: true,
+  ringkasEn: true,
+  deskripsiEn: true,
+  peruntukanEn: true,
+  asalEn: true,
+  spesifikasiEn: true,
+  keunggulanEn: true,
   mitra: {
     where: { dihapusPada: null },
     orderBy: { urutan: "asc" },
@@ -105,13 +120,13 @@ const PILIH_PRODUK = {
 } as const;
 
 /** Seluruh komoditas terbit, mengikuti urutan yang disetel di CMS. */
-export async function produkTerbit(): Promise<Product[]> {
+export async function produkTerbit(bahasa: Bahasa): Promise<Product[]> {
   const baris = await db().produk.findMany({
     where: PRODUK_TERBIT,
     orderBy: [{ urutan: "asc" }, { nama: "asc" }],
     select: PILIH_PRODUK,
   });
-  return baris.map(keProduct);
+  return baris.map((b) => keProduct(bahasa, b));
 }
 
 
@@ -119,20 +134,28 @@ export async function produkTerbit(): Promise<Product[]> {
 
 /* ----------------------------------------------------------- Anggota tim --*/
 
-const keOrang = (a: {
-  nama: string;
-  jabatan: string;
-  bio: string | null;
-  foto: { url: string } | null;
-}): Orang => ({
+const keOrang = (
+  bahasa: Bahasa,
+  a: {
+    nama: string;
+    jabatan: string;
+    bio: string | null;
+    jabatanEn: string | null;
+    bioEn: string | null;
+    foto: { url: string } | null;
+  },
+): Orang => ({
   name: a.nama,
-  role: a.jabatan,
-  bio: a.bio ?? undefined,
+  role: pilih(bahasa, a.jabatan, a.jabatanEn),
+  bio: a.bio ? pilih(bahasa, a.bio, a.bioEn) : undefined,
   photo: a.foto?.url,
 });
 
 /** Anggota tim per kelompok, mengikuti urutan yang disetel di CMS. */
-export async function anggotaTim(kelompok: "PIMPINAN" | "TIM"): Promise<Orang[]> {
+export async function anggotaTim(
+  bahasa: Bahasa,
+  kelompok: "PIMPINAN" | "TIM",
+): Promise<Orang[]> {
   const baris = await db().anggotaTim.findMany({
     where: { kelompok, dihapusPada: null },
     orderBy: [{ urutan: "asc" }, { nama: "asc" }],
@@ -140,10 +163,12 @@ export async function anggotaTim(kelompok: "PIMPINAN" | "TIM"): Promise<Orang[]>
       nama: true,
       jabatan: true,
       bio: true,
+      jabatanEn: true,
+      bioEn: true,
       foto: { select: { url: true } },
     },
   });
-  return baris.map(keOrang);
+  return baris.map((b) => keOrang(bahasa, b));
 }
 
 /* ==========================================================================
@@ -185,34 +210,34 @@ export type Profil = {
  * Alamat TIDAK ada di sini. Perusahaan punya kantor pusat dan cabang; lihat
  * daftarKantor().
  */
-export async function profil(): Promise<Profil> {
+export async function profil(bahasa: Bahasa): Promise<Profil> {
   try {
     const p = db();
     const [row, stat] = await Promise.all([
       p.perusahaan.findUnique({ where: { id: "tunggal" } }),
       p.statistik.findUnique({ where: { id: "tunggal" } }),
     ]);
-    if (!row) return company;
+    if (!row) return naskah(bahasa).company;
     return {
       name: row.nama,
       legalName: row.namaLegal,
-      tagline: row.tagline,
+      tagline: pilih(bahasa, row.tagline, row.taglineEn),
       nib: row.nib,
       founded: row.berdiri,
-      clientCount: stat?.jumlahKlien ?? company.clientCount,
-      intro: row.intro,
+      clientCount: stat?.jumlahKlien ?? naskah(bahasa).company.clientCount,
+      intro: pilih(bahasa, row.intro, row.introEn),
       phone: row.telepon,
       // Diturunkan, bukan disimpan: nomor yang tersimpan dua kali pasti
       // berselisih suatu saat, dan yang salah justru tautan yang diklik.
       phoneHref: `tel:+62${row.telepon.replace(/^0/, "")}`,
       whatsappHref: row.whatsapp,
       email: row.email,
-      vision: row.visi,
-      history: row.sejarah,
-      background: row.latarBelakang,
+      vision: pilih(bahasa, row.visi, row.visiEn),
+      history: pilih(bahasa, row.sejarah, row.sejarahEn),
+      background: pilih(bahasa, row.latarBelakang, row.latarBelakangEn),
     };
   } catch {
-    return company;
+    return naskah(bahasa).company;
   }
 }
 
@@ -232,31 +257,31 @@ export type Kantor = {
  * Selalu mengembalikan minimal satu entri: footer dan halaman kontak menyebut
  * alamat, dan daftar kosong di situ membuat situs terlihat tidak punya kantor.
  */
-export async function daftarKantor(): Promise<Kantor[]> {
+export async function daftarKantor(bahasa: Bahasa): Promise<Kantor[]> {
   try {
     const r = await db().kantor.findMany({
       where: HIDUP,
       orderBy: [{ urutan: "asc" }, { nama: "asc" }],
     });
-    if (!r.length) return kantor.map((k) => ({ ...k }));
+    if (!r.length) return naskah(bahasa).kantor.map((k) => ({ ...k }));
     return r.map((k) => ({
       jenis: k.jenis,
-      nama: k.nama,
-      alamat: k.alamat,
-      alamatSingkat: k.alamatSingkat,
+      nama: pilih(bahasa, k.nama, k.namaEn),
+      alamat: pilih(bahasa, k.alamat, k.alamatEn),
+      alamatSingkat: pilih(bahasa, k.alamatSingkat, k.alamatSingkatEn),
       telepon: k.telepon,
       email: k.email,
       mapsCid: k.mapsCid,
     }));
   } catch {
-    return kantor.map((k) => ({ ...k }));
+    return naskah(bahasa).kantor.map((k) => ({ ...k }));
   }
 }
 
 /** Kantor pusat. Dipakai footer, SEO, dan JSON-LD, yang hanya boleh menyebut
  *  satu alamat. Jatuh ke entri pertama bila tidak ada yang bertanda PUSAT. */
-export async function kantorPusat(): Promise<Kantor> {
-  const semua = await daftarKantor();
+export async function kantorPusat(bahasa: Bahasa): Promise<Kantor> {
+  const semua = await daftarKantor(bahasa);
   return semua.find((k) => k.jenis === "PUSAT") ?? semua[0];
 }
 
@@ -277,11 +302,12 @@ export type IsiBeranda = {
   fotoDua: { url: string; alt: string } | null;
 };
 
-export async function isiBeranda(): Promise<IsiBeranda> {
+export async function isiBeranda(bahasa: Bahasa): Promise<IsiBeranda> {
+  const b = naskah(bahasa).beranda;
   const bawaan: IsiBeranda = {
-    ...beranda,
-    fotoSatu: { url: beranda.fotoSatu, alt: "" },
-    fotoDua: { url: beranda.fotoDua, alt: "" },
+    ...b,
+    fotoSatu: { url: b.fotoSatu, alt: "" },
+    fotoDua: { url: b.fotoDua, alt: "" },
   };
   try {
     const row = await db().beranda.findUnique({
@@ -293,18 +319,26 @@ export async function isiBeranda(): Promise<IsiBeranda> {
     });
     if (!row) return bawaan;
     return {
-      pitaTag: row.pitaTag,
-      pitaTeks: row.pitaTeks,
+      pitaTag: pilih(bahasa, row.pitaTag, row.pitaTagEn),
+      pitaTeks: pilih(bahasa, row.pitaTeks, row.pitaTeksEn),
       pitaTautan: row.pitaTautan,
-      judul: row.judul,
-      intro: row.intro,
-      ctaUtamaLabel: row.ctaUtamaLabel,
-      ctaUtamaLabelPendek: row.ctaUtamaLabelPendek,
+      judul: pilih(bahasa, row.judul, row.judulEn),
+      intro: pilih(bahasa, row.intro, row.introEn),
+      ctaUtamaLabel: pilih(bahasa, row.ctaUtamaLabel, row.ctaUtamaLabelEn),
+      ctaUtamaLabelPendek: pilih(
+        bahasa,
+        row.ctaUtamaLabelPendek,
+        row.ctaUtamaLabelPendekEn,
+      ),
       ctaUtamaHref: row.ctaUtamaHref,
-      ctaKeduaLabel: row.ctaKeduaLabel,
-      ctaKeduaLabelPendek: row.ctaKeduaLabelPendek,
+      ctaKeduaLabel: pilih(bahasa, row.ctaKeduaLabel, row.ctaKeduaLabelEn),
+      ctaKeduaLabelPendek: pilih(
+        bahasa,
+        row.ctaKeduaLabelPendek,
+        row.ctaKeduaLabelPendekEn,
+      ),
       ctaKeduaHref: row.ctaKeduaHref,
-      manifesto: row.manifesto,
+      manifesto: pilih(bahasa, row.manifesto, row.manifestoEn),
       fotoSatu: row.fotoSatu,
       fotoDua: row.fotoDua,
     };
@@ -323,9 +357,9 @@ const urutBlok = { orderBy: { urutan: "asc" }, where: HIDUP } as const;
  * bawaan — situs yang menampilkan foto tambang milik orang lain di halaman
  * depannya jauh lebih merugikan daripada hero polos.
  */
-export async function slideHero(): Promise<
-  { foto: string; alt: string; keterangan: string | null }[]
-> {
+export async function slideHero(
+  bahasa: Bahasa,
+): Promise<{ foto: string; alt: string; keterangan: string | null }[]> {
   try {
     const r = await db().slide.findMany({
       ...urutBlok,
@@ -334,7 +368,9 @@ export async function slideHero(): Promise<
     return r.map((x) => ({
       foto: x.foto.url,
       alt: x.foto.alt,
-      keterangan: x.keterangan,
+      keterangan: x.keterangan
+        ? pilih(bahasa, x.keterangan, x.keteranganEn)
+        : null,
     }));
   } catch {
     return [];
@@ -342,15 +378,20 @@ export async function slideHero(): Promise<
 }
 
 /** Nilai perusahaan. Bentuknya sengaja sama dengan `values` yang lama. */
-export async function nilaiPerusahaan(): Promise<
-  { title: string; body: string; icon: string }[]
-> {
+export async function nilaiPerusahaan(
+  bahasa: Bahasa,
+): Promise<{ title: string; body: string; icon: string }[]> {
+  const cadangan = () => [...naskah(bahasa).values];
   try {
     const r = await db().blokKonten.findMany({ ...urutBlok, where: { ...HIDUP, jenis: "NILAI" } });
-    if (!r.length) return [...values];
-    return r.map((b) => ({ title: b.judul, body: b.isi, icon: b.ikon ?? "" }));
+    if (!r.length) return cadangan();
+    return r.map((b) => ({
+      title: pilih(bahasa, b.judul, b.judulEn),
+      body: pilih(bahasa, b.isi, b.isiEn),
+      icon: b.ikon ?? "",
+    }));
   } catch {
-    return [...values];
+    return cadangan();
   }
 }
 
@@ -361,84 +402,108 @@ export async function nilaiPerusahaan(): Promise<
  * kalimat utuh, dan memecahnya jadi judul plus penjelasan berarti mengarang
  * separuhnya.
  */
-export async function misiPerusahaan(): Promise<string[]> {
+export async function misiPerusahaan(bahasa: Bahasa): Promise<string[]> {
+  const cadangan = () => [...naskah(bahasa).misi];
   try {
     const r = await db().blokKonten.findMany({ ...urutBlok, where: { ...HIDUP, jenis: "MISI" } });
-    if (!r.length) return [...misi];
-    return r.map((b) => b.judul);
+    if (!r.length) return cadangan();
+    return r.map((b) => pilih(bahasa, b.judul, b.judulEn));
   } catch {
-    return [...misi];
+    return cadangan();
   }
 }
 
-export async function alasanMemilih(): Promise<
-  { icon: string; title: string; body: string }[]
-> {
+export async function alasanMemilih(
+  bahasa: Bahasa,
+): Promise<{ icon: string; title: string; body: string }[]> {
+  const cadangan = () => [...naskah(bahasa).alasanKami];
   try {
     const r = await db().blokKonten.findMany({ ...urutBlok, where: { ...HIDUP, jenis: "ALASAN" } });
-    if (!r.length) return [...alasanKami];
-    return r.map((b) => ({ icon: b.ikon ?? "", title: b.judul, body: b.isi }));
-  } catch {
-    return [...alasanKami];
-  }
-}
-
-export async function langkah(): Promise<{ title: string; body: string }[]> {
-  try {
-    const r = await db().blokKonten.findMany({ ...urutBlok, where: { ...HIDUP, jenis: "LANGKAH" } });
-    if (!r.length) return [...langkahMulai];
-    return r.map((b) => ({ title: b.judul, body: b.isi }));
-  } catch {
-    return [...langkahMulai];
-  }
-}
-
-export async function faq(): Promise<{ q: string; a: string }[]> {
-  try {
-    const r = await db().blokKonten.findMany({ ...urutBlok, where: { ...HIDUP, jenis: "FAQ" } });
-    if (!r.length) return [...faqUmum];
-    return r.map((b) => ({ q: b.judul, a: b.isi }));
-  } catch {
-    return [...faqUmum];
-  }
-}
-
-export async function tonggak(): Promise<
-  { tahun: string; judul: string; body: string }[]
-> {
-  try {
-    const r = await db().perjalanan.findMany(urutBlok);
-    if (!r.length) return [...perjalanan];
-    return r.map((t) => ({ tahun: t.tahun, judul: t.judul, body: t.isi }));
-  } catch {
-    return [...perjalanan];
-  }
-}
-
-export async function bidangUsaha(): Promise<string[]> {
-  try {
-    const r = await db().layanan.findMany(urutBlok);
-    if (!r.length) return [...services];
-    return r.map((l) => l.nama);
-  } catch {
-    return [...services];
-  }
-}
-
-export async function kelompokLayanan(): Promise<
-  { title: string; body: string; icon: string; covers: string[] }[]
-> {
-  try {
-    const r = await db().grupLayanan.findMany(urutBlok);
-    if (!r.length) return serviceGroups.map((g) => ({ ...g, covers: [...g.covers] }));
-    return r.map((g) => ({
-      title: g.judul,
-      body: g.isi,
-      icon: g.ikon,
-      covers: larik<string>(g.cakupan),
+    if (!r.length) return cadangan();
+    return r.map((b) => ({
+      icon: b.ikon ?? "",
+      title: pilih(bahasa, b.judul, b.judulEn),
+      body: pilih(bahasa, b.isi, b.isiEn),
     }));
   } catch {
-    return serviceGroups.map((g) => ({ ...g, covers: [...g.covers] }));
+    return cadangan();
+  }
+}
+
+export async function langkah(
+  bahasa: Bahasa,
+): Promise<{ title: string; body: string }[]> {
+  const cadangan = () => [...naskah(bahasa).langkahMulai];
+  try {
+    const r = await db().blokKonten.findMany({ ...urutBlok, where: { ...HIDUP, jenis: "LANGKAH" } });
+    if (!r.length) return cadangan();
+    return r.map((b) => ({
+      title: pilih(bahasa, b.judul, b.judulEn),
+      body: pilih(bahasa, b.isi, b.isiEn),
+    }));
+  } catch {
+    return cadangan();
+  }
+}
+
+export async function faq(bahasa: Bahasa): Promise<{ q: string; a: string }[]> {
+  const cadangan = () => [...naskah(bahasa).faqUmum];
+  try {
+    const r = await db().blokKonten.findMany({ ...urutBlok, where: { ...HIDUP, jenis: "FAQ" } });
+    if (!r.length) return cadangan();
+    return r.map((b) => ({
+      q: pilih(bahasa, b.judul, b.judulEn),
+      a: pilih(bahasa, b.isi, b.isiEn),
+    }));
+  } catch {
+    return cadangan();
+  }
+}
+
+export async function tonggak(
+  bahasa: Bahasa,
+): Promise<{ tahun: string; judul: string; body: string }[]> {
+  const cadangan = () => [...naskah(bahasa).perjalanan];
+  try {
+    const r = await db().perjalanan.findMany(urutBlok);
+    if (!r.length) return cadangan();
+    return r.map((t) => ({
+      tahun: t.tahun,
+      judul: pilih(bahasa, t.judul, t.judulEn),
+      body: pilih(bahasa, t.isi, t.isiEn),
+    }));
+  } catch {
+    return cadangan();
+  }
+}
+
+export async function bidangUsaha(bahasa: Bahasa): Promise<string[]> {
+  const cadangan = () => [...naskah(bahasa).services];
+  try {
+    const r = await db().layanan.findMany(urutBlok);
+    if (!r.length) return cadangan();
+    return r.map((l) => pilih(bahasa, l.nama, l.namaEn));
+  } catch {
+    return cadangan();
+  }
+}
+
+export async function kelompokLayanan(
+  bahasa: Bahasa,
+): Promise<{ title: string; body: string; icon: string; covers: string[] }[]> {
+  const cadangan = () =>
+    naskah(bahasa).serviceGroups.map((g) => ({ ...g, covers: [...g.covers] }));
+  try {
+    const r = await db().grupLayanan.findMany(urutBlok);
+    if (!r.length) return cadangan();
+    return r.map((g) => ({
+      title: pilih(bahasa, g.judul, g.judulEn),
+      body: pilih(bahasa, g.isi, g.isiEn),
+      icon: g.ikon,
+      covers: pilihJson(bahasa, larik<string>(g.cakupan), g.cakupanEn),
+    }));
+  } catch {
+    return cadangan();
   }
 }
 
@@ -449,7 +514,7 @@ export async function kelompokLayanan(): Promise<
  * tanpa gambar meninggalkan lubang di kisinya yang terbaca sebagai gambar
  * gagal dimuat, bukan sebagai entri tanpa foto.
  */
-export async function daftarProyek(): Promise<
+export async function daftarProyek(bahasa: Bahasa): Promise<
   { judul: string; lokasi: string | null; tahun: string | null; ringkas: string | null; foto: string; alt: string }[]
 > {
   try {
@@ -460,10 +525,10 @@ export async function daftarProyek(): Promise<
     return r.flatMap((p) =>
       p.foto
         ? [{
-            judul: p.judul,
-            lokasi: p.lokasi,
+            judul: pilih(bahasa, p.judul, p.judulEn),
+            lokasi: p.lokasi ? pilih(bahasa, p.lokasi, p.lokasiEn) : null,
             tahun: p.tahun,
-            ringkas: p.ringkas,
+            ringkas: p.ringkas ? pilih(bahasa, p.ringkas, p.ringkasEn) : null,
             foto: p.foto.url,
             alt: p.foto.alt,
           }]
@@ -498,27 +563,35 @@ export async function logoMitra(): Promise<{ name: string; src: string }[]> {
  * selama logonya belum diunggah, dan itu jauh lebih baik daripada bagian klien
  * yang kosong sama sekali padahal namanya sudah ada.
  */
-export async function namaMitra(): Promise<{ name: string; sector: string }[]> {
+export async function namaMitra(
+  bahasa: Bahasa,
+): Promise<{ name: string; sector: string }[]> {
   try {
     const r = await db().mitra.findMany(urutBlok);
-    return r.map((m) => ({ name: m.nama, sector: m.sektor }));
+    return r.map((m) => ({
+      name: m.nama,
+      sector: pilih(bahasa, m.sektor, m.sektorEn),
+    }));
   } catch {
     return [];
   }
 }
 
 /** Kutipan klien. Kosong sampai ada testimoni sungguhan yang diizinkan tampil. */
-export async function kutipanKlien(): Promise<
-  { quote: string; name: string; role: string; contoh: boolean }[]
-> {
+export async function kutipanKlien(
+  bahasa: Bahasa,
+): Promise<{ quote: string; name: string; role: string; contoh: boolean }[]> {
   try {
     const r = await db().testimoni.findMany(urutBlok);
-    return r.map((t) => ({
-      quote: t.kutipan,
-      name: t.nama,
-      role: t.organisasi ? `${t.peran}, ${t.organisasi}` : t.peran,
-      contoh: t.contoh,
-    }));
+    return r.map((t) => {
+      const peran = pilih(bahasa, t.peran, t.peranEn);
+      return {
+        quote: pilih(bahasa, t.kutipan, t.kutipanEn),
+        name: t.nama,
+        role: t.organisasi ? `${peran}, ${t.organisasi}` : peran,
+        contoh: t.contoh,
+      };
+    });
   } catch {
     return [];
   }

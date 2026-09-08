@@ -13,6 +13,8 @@ export type BarisAnggota = {
   id: string;
   nama: string;
   jabatan: string;
+  jabatanEn: string | null;
+  bioEn: string | null;
   kelompok: "PIMPINAN" | "TIM";
   bio: string | null;
   urutan: number;
@@ -26,6 +28,8 @@ type Draf = Omit<BarisAnggota, "id">;
 const KOSONG: Draf = {
   nama: "",
   jabatan: "",
+  jabatanEn: null,
+  bioEn: null,
   kelompok: "TIM",
   bio: null,
   urutan: 0,
@@ -71,6 +75,8 @@ export function PanelTim({ awal }: { awal: BarisAnggota[] }) {
       const h = await simpanAnggota(sunting, {
         ...draf,
         bio: draf.bio?.trim() ? draf.bio : null,
+        jabatanEn: draf.jabatanEn?.trim() ? draf.jabatanEn : null,
+        bioEn: draf.bioEn?.trim() ? draf.bioEn : null,
       });
       if (!h.ok) {
         setPesan(h.pesan);
@@ -237,6 +243,22 @@ export function PanelTim({ awal }: { awal: BarisAnggota[] }) {
                   className={`${ISIAN} mt-2`}
                 />
                 {galat.jabatan && <p className="mt-1 text-xs text-red-300">{galat.jabatan}</p>}
+              </div>
+
+              {/* Nama orang tidak diterjemahkan; jabatannya ya. Kosong berarti
+                  halaman /en memakai jabatan berbahasa Indonesia. */}
+              <div>
+                <label htmlFor="t-jabatan-en" className={LABEL}>
+                  Jabatan <span className="font-normal text-muted-fg">· English</span>
+                </label>
+                <input
+                  id="t-jabatan-en"
+                  value={draf.jabatanEn ?? ""}
+                  onChange={(e) =>
+                    setDraf((d) => ({ ...d, jabatanEn: e.target.value || null }))
+                  }
+                  className={`${ISIAN} mt-2`}
+                />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

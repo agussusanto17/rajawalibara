@@ -84,6 +84,23 @@ export type KategoriMasuk = z.infer<typeof kategoriMasuk>;
 const teks = (min: number, maks: number, label: string) =>
   z.string().trim().min(min, `${label} minimal ${min} karakter.`).max(maks);
 
+/**
+ * Kolom terjemahan bahasa Inggris.
+ *
+ * Selalu boleh kosong, dan kosong disimpan sebagai NULL — bukan string
+ * kosong. Halaman /en membaca NULL sebagai "belum diterjemahkan" lalu
+ * menampilkan teks Indonesianya; string kosong yang tersimpan sebagai
+ * terjemahan sah akan mengosongkan bagian itu tanpa ada yang menyadarinya.
+ *
+ * Tanpa batas minimum: terjemahan setengah jadi yang ditolak formulir memaksa
+ * penyunting membatalkan seluruh perubahannya, termasuk yang sudah benar.
+ */
+const teksEn = (maks: number) =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+    z.string().trim().max(maks).nullable().default(null),
+  );
+
 export const produkMasuk = z.object({
   nama: teks(2, 60, "Nama"),
   namaPanjang: teks(3, 300, "Nama panjang"),
@@ -109,6 +126,35 @@ export const produkMasuk = z.object({
   /** Boleh kosong: bagian asal tambang tidak dirender selama belum diisi,
    *  bukan diisi klaim yang belum bisa dibuktikan dokumennya. */
   asal: z.string().trim().max(3000).default(""),
+  namaEn: teksEn(60),
+  namaPanjangEn: teksEn(300),
+  ringkasEn: teksEn(300),
+  deskripsiEn: teksEn(3000),
+  peruntukanEn: teksEn(300),
+  asalEn: teksEn(3000),
+  /** Spesifikasi versi Inggris: parameter dan satuan dialihbahasakan, ANGKANYA
+   *  tidak. Dua bahasa yang menyebut angka berlainan untuk kargo yang sama
+   *  adalah sengketa kontrak, bukan salah ketik. */
+  spesifikasiEn: z
+    .array(
+      z.object({
+        parameter: z.string().trim().min(1).max(120),
+        nilai: z.string().trim().min(1).max(120),
+        satuan: z.string().trim().max(40).default(""),
+      }),
+    )
+    .max(40)
+    .default([]),
+  keunggulanEn: z
+    .array(
+      z.object({
+        icon: z.string().trim().max(40).default(""),
+        title: z.string().trim().min(1).max(160),
+        body: z.string().trim().min(1).max(1000),
+      }),
+    )
+    .max(12)
+    .default([]),
   urutan: z.coerce.number().int().min(0).max(999),
   status: z.enum(["DRAF", "TERBIT"]),
 
@@ -174,6 +220,8 @@ export type ProdukMasuk = z.infer<typeof produkMasuk>;
 export const anggotaMasuk = z.object({
   nama: teks(2, 120, "Nama"),
   jabatan: teks(2, 120, "Jabatan"),
+  jabatanEn: teksEn(120),
+  bioEn: teksEn(1000),
   kelompok: z.enum(["PIMPINAN", "TIM"]),
   /** Hanya dipakai kartu pimpinan. Kosong berarti kartu tampil tanpa paragraf. */
   bio: z.string().trim().max(1000).nullable(),
@@ -209,6 +257,11 @@ export const perusahaanMasuk = z.object({
   visi: teks(10, 800, "Visi"),
   sejarah: teks(20, 3000, "Sejarah"),
   latarBelakang: teks(20, 3000, "Latar belakang"),
+  taglineEn: teksEn(300),
+  introEn: teksEn(400),
+  visiEn: teksEn(800),
+  sejarahEn: teksEn(3000),
+  latarBelakangEn: teksEn(3000),
 });
 
 /**
@@ -229,6 +282,9 @@ export const kantorMasuk = z.object({
   mapsLat: z.coerce.number().min(-90).max(90).default(0),
   mapsLng: z.coerce.number().min(-180).max(180).default(0),
   urutan: z.coerce.number().int().min(0).max(999),
+  namaEn: teksEn(120),
+  alamatEn: teksEn(500),
+  alamatSingkatEn: teksEn(300),
 });
 
 export type KantorMasuk = z.infer<typeof kantorMasuk>;
@@ -250,6 +306,15 @@ export const berandaMasuk = z.object({
   manifesto: teks(20, 3000, "Manifesto"),
   fotoSatuId: z.uuid().nullable(),
   fotoDuaId: z.uuid().nullable(),
+  pitaTagEn: teksEn(40),
+  pitaTeksEn: teksEn(300),
+  judulEn: teksEn(500),
+  introEn: teksEn(500),
+  ctaUtamaLabelEn: teksEn(60),
+  ctaUtamaLabelPendekEn: teksEn(30),
+  ctaKeduaLabelEn: teksEn(60),
+  ctaKeduaLabelPendekEn: teksEn(30),
+  manifestoEn: teksEn(3000),
 });
 
 export const statistikMasuk = z.object({
@@ -265,6 +330,8 @@ export const seoMasuk = z.object({
     .regex(/^\/[a-z0-9\-/]*$/, "Jalur harus dimulai dengan / dan huruf kecil."),
   judul: z.string().trim().max(70).nullable(),
   deskripsi: z.string().trim().max(300).nullable(),
+  judulEn: teksEn(70),
+  deskripsiEn: teksEn(300),
 });
 
 export type PerusahaanMasuk = z.infer<typeof perusahaanMasuk>;
@@ -281,6 +348,8 @@ export const blokMasuk = z.object({
   ikon: ikonOpsional,
   judul: teks(3, 300, "Judul"),
   isi: teks(10, 3000, "Isi"),
+  judulEn: teksEn(300),
+  isiEn: teksEn(3000),
   urutan,
 });
 
@@ -293,6 +362,7 @@ export const blokMasuk = z.object({
  */
 export const misiMasuk = z.object({
   judul: teks(10, 300, "Butir misi"),
+  judulEn: teksEn(300),
   urutan,
 });
 
@@ -302,6 +372,8 @@ export const perjalananMasuk = z.object({
   tahun: teks(4, 20, "Tahun"),
   judul: teks(3, 300, "Judul"),
   isi: teks(10, 3000, "Isi"),
+  judulEn: teksEn(300),
+  isiEn: teksEn(3000),
   urutan,
 });
 
@@ -317,6 +389,9 @@ export const proyekMasuk = z.object({
   lokasi: z.string().trim().max(160).nullable().default(null),
   tahun: z.string().trim().max(20).nullable().default(null),
   ringkas: z.string().trim().max(1000).nullable().default(null),
+  judulEn: teksEn(300),
+  lokasiEn: teksEn(160),
+  ringkasEn: teksEn(1000),
   fotoId: z.uuid("Foto wajib dipilih."),
   urutan,
 });
@@ -330,11 +405,13 @@ export const proyekMasuk = z.object({
 export const slideMasuk = z.object({
   fotoId: z.uuid("Foto wajib dipilih."),
   keterangan: z.string().trim().max(120).nullable().default(null),
+  keteranganEn: teksEn(120),
   urutan,
 });
 
 export const layananMasuk = z.object({
   nama: teks(3, 300, "Nama bidang usaha"),
+  namaEn: teksEn(300),
   urutan,
 });
 
@@ -343,6 +420,9 @@ export const grupLayananMasuk = z.object({
   judul: teks(3, 300, "Judul"),
   isi: teks(10, 3000, "Isi"),
   cakupan: z.array(z.string().trim().min(1)).max(20).default([]),
+  judulEn: teksEn(300),
+  isiEn: teksEn(3000),
+  cakupanEn: z.array(z.string().trim().min(1)).max(20).default([]),
   urutan,
 });
 
@@ -352,14 +432,17 @@ export const mitraMasuk = z.object({
    *  Kabupaten) dari project asal, yang hanya masuk akal untuk klien
    *  pemerintahan. */
   sektor: teks(2, 60, "Sektor"),
+  sektorEn: teksEn(60),
   logoId: z.uuid().nullable().default(null),
   urutan,
 });
 
 export const testimoniMasuk = z.object({
   kutipan: teks(20, 2000, "Kutipan"),
+  kutipanEn: teksEn(2000),
   nama: teks(2, 80, "Nama"),
   peran: teks(2, 80, "Peran"),
+  peranEn: teksEn(80),
   organisasi: teks(2, 120, "Organisasi"),
   fotoId: z.uuid().nullable().default(null),
   /** Dimatikan setelah kutipannya diganti yang sungguhan. */

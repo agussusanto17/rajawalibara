@@ -3,20 +3,23 @@ import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/site/button-link";
 import { ScrollRevealText } from "@/components/site/scroll-reveal-text";
 import { isiBeranda } from "@/lib/konten";
+import { tautan, type Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 
-export async function Manifesto() {
-  const teks = await isiBeranda();
-  const STATEMENT = teks.manifesto;
+export async function Manifesto({ bahasa }: { bahasa: Bahasa }) {
+  const isi = await isiBeranda(bahasa);
+  const t = teks(bahasa);
+  const STATEMENT = isi.manifesto;
   // Slot yang fotonya belum dipilih dilewati, bukan dirender kosong: bingkai
   // abu-abu tanpa gambar terbaca sebagai gambar gagal muat.
-  const PHOTOS = [teks.fotoSatu, teks.fotoDua].filter((f) => f !== null);
+  const PHOTOS = [isi.fotoSatu, isi.fotoDua].filter((f) => f !== null);
   return (
     /* Section terang: melanjutkan cahaya di dasar hero sebelum halaman
        berangsur gelap lagi di section berikutnya. */
     <section className="bg-white py-24 text-ink-strong sm:py-32">
       <div className="shell">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,14rem)_1fr] lg:gap-16">
-          <p className="text-sm font-medium text-ink-strong/60">Tentang kami</p>
+          <p className="text-sm font-medium text-ink-strong/60">{t.manifesto.eyebrow}</p>
 
           <ScrollRevealText
             text={STATEMENT}
@@ -43,16 +46,16 @@ export async function Manifesto() {
 
           <div className="flex flex-col items-start gap-5 sm:col-span-2 lg:col-span-1 lg:pb-4">
             <p className="text-lg font-semibold leading-snug tracking-[-0.02em]">
-              Tim yang menjaga
-              <br />
-              rantai pasoknya
+              {t.manifesto.judulBaris1}
+                <br />
+                {t.manifesto.judulBaris2}
             </p>
             <ButtonLink
-              href="/tentang-kami"
+              href={tautan(bahasa, "/tentang-kami")}
               size="lg"
               className="rounded-lg px-5"
             >
-              Kenali Tim Kami
+              {t.manifesto.kenaliTim}
               <ArrowRight className="size-4" />
             </ButtonLink>
           </div>

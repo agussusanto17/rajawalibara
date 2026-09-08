@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { kirimEvent } from "@/lib/analitik";
+import { teks } from "@/lib/teks";
+import type { Bahasa } from "@/lib/bahasa";
 import { Turnstile, type TurnstileRef } from "@/components/site/turnstile";
 
 /** Harus sama dengan AKSI_KONTAK di lib/turnstile.ts. */
@@ -45,14 +47,17 @@ type Status = "diam" | "mengirim" | "terkirim";
  *  karena komponen ini berjalan di peramban dan tidak bisa membaca basis data
  *  sendiri. */
 export function ContactForm({
+  bahasa,
   produk,
   whatsappHref,
 }: {
+  bahasa: Bahasa;
   produk: { slug: string; name: string }[];
   /** Datang sebagai props: komponen ini berjalan di peramban dan tidak bisa
    *  membaca basis data sendiri. */
   whatsappHref: string;
 }) {
+  const t = teks(bahasa).formulir;
   const [galat, setGalat] = useState<Galat>({});
   const [gagalKirim, setGagalKirim] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("diam");
@@ -77,15 +82,15 @@ export function ContactForm({
     const pesan = ambil("pesan");
 
     const next: Galat = {};
-    if (!nama) next.nama = "Nama wajib diisi.";
-    if (!email) next.email = "Email wajib diisi.";
+    if (!nama) next.nama = t.galatNama;
+    if (!email) next.email = t.galatEmail;
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      next.email = "Format email belum benar.";
-    if (!telepon) next.telepon = "Nomor telepon wajib diisi.";
+      next.email = t.galatEmailFormat;
+    if (!telepon) next.telepon = t.galatTelepon;
     else if (telepon.replace(/\D/g, "").length < 9)
-      next.telepon = "Nomor telepon belum lengkap.";
-    if (!pesan) next.pesan = "Pesan wajib diisi.";
-    else if (pesan.length < 10) next.pesan = "Pesan minimal 10 karakter.";
+      next.telepon = t.galatTeleponPendek;
+    if (!pesan) next.pesan = t.galatPesan;
+    else if (pesan.length < 10) next.pesan = t.galatPesanPendek;
 
     setGalat(next);
     setGagalKirim(null);
@@ -129,7 +134,7 @@ export function ContactForm({
       if (!res.ok) {
         if (hasil.galat) setGalat(hasil.galat);
         setGagalKirim(
-          hasil.pesan ?? "Pesan gagal terkirim. Silakan coba lagi.",
+          hasil.pesan ?? t.gagalKirim,
         );
         setStatus("diam");
         return;
@@ -145,7 +150,7 @@ export function ContactForm({
       });
     } catch {
       setGagalKirim(
-        "Tidak bisa menghubungi server. Periksa koneksi Anda, atau hubungi kami lewat WhatsApp.",
+        t.gagalJaringan,
       );
       setStatus("diam");
     }
@@ -156,18 +161,17 @@ export function ContactForm({
       <div className="flex flex-col items-start gap-3 rounded-2xl border border-gold-ink/25 bg-gold-ink/[0.06] p-8 text-left">
         <CheckCircle2 className="size-8 text-gold-ink" aria-hidden="true" />
         <h3 className="text-xl font-semibold text-ink-strong">
-          Pesan Anda masuk
+          {t.berhasilJudul}
         </h3>
         <p className="text-[0.95rem] leading-relaxed text-ink-strong/70">
-          Terima kasih sudah menghubungi kami. Tim kami membalas melalui email
-          dalam 1×24 jam kerja.
+          {t.berhasilIsi}
         </p>
         <Button
           variant="outline"
           className="mt-2 rounded-lg border-ink-strong/25 bg-transparent text-ink-strong hover:bg-ink-strong/[0.06] hover:text-ink-strong"
           onClick={() => setStatus("diam")}
         >
-          Kirim pesan lain
+          {t.kirimLagi}
         </Button>
       </div>
     );
@@ -196,59 +200,59 @@ export function ContactForm({
               rel="noopener noreferrer"
               className="font-semibold underline underline-offset-4 hover:text-gold-ink"
             >
-              Buka WhatsApp
+              {teks(bahasa).umum.bukaWhatsapp}
             </a>
           </span>
         </p>
       )}
 
-      <Field id="nama" label="Nama lengkap" error={galat.nama}>
+      <Field id="nama" label={t.labelNama} error={galat.nama} opsional={t.opsional}>
         <Input
           className={ISIAN}
           id="nama"
           name="nama"
-          placeholder="Nama Anda"
+          placeholder={t.isianNama}
           aria-invalid={!!galat.nama}
           aria-describedby={galat.nama ? "nama-error" : undefined}
         />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id="email" label="Email" error={galat.email}>
+        <Field id="email" label={t.labelEmail} error={galat.email} opsional={t.opsional}>
           <Input
             className={ISIAN}
             id="email"
             name="email"
             type="email"
-            placeholder="nama@email.com"
+            placeholder={t.isianEmail}
             aria-invalid={!!galat.email}
             aria-describedby={galat.email ? "email-error" : undefined}
           />
         </Field>
 
-        <Field id="telepon" label="Telepon / WhatsApp" error={galat.telepon}>
+        <Field id="telepon" label={t.labelTelepon} error={galat.telepon} opsional={t.opsional}>
           <Input
             className={ISIAN}
             id="telepon"
             name="telepon"
             type="tel"
             inputMode="tel"
-            placeholder="08xx xxxx xxxx"
+            placeholder={t.isianTelepon}
             aria-invalid={!!galat.telepon}
             aria-describedby={galat.telepon ? "telepon-error" : undefined}
           />
         </Field>
 
-        <Field id="organisasi" label="Organisasi" optional>
+        <Field id="organisasi" label={t.labelOrganisasi} optional opsional={t.opsional}>
           <Input
             className={ISIAN}
             id="organisasi"
             name="organisasi"
-            placeholder="Nama sekolah, dinas, atau perusahaan"
+            placeholder={t.isianOrganisasi}
           />
         </Field>
 
-        <Field id="produk" label="Produk yang diminati" optional>
+        <Field id="produk" label={t.labelProduk} optional opsional={t.opsional}>
           {/* <select> bawaan peramban, bukan menu buatan sendiri: tetap bekerja
               tanpa JavaScript, sudah aksesibel, dan di ponsel memunculkan
               pemilih bawaan sistem yang jauh lebih enak dipakai. */}
@@ -262,24 +266,24 @@ export function ContactForm({
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23080d0d' stroke-opacity='0.45' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
             }}
           >
-            <option value="">Belum menentukan</option>
+            <option value="">{t.belumMenentukan}</option>
             {produk.map((p) => (
               <option key={p.slug} value={p.slug}>
                 {p.name}
               </option>
             ))}
-            <option value="lainnya">Lainnya</option>
+            <option value="lainnya">{t.lainnya}</option>
           </select>
         </Field>
       </div>
 
-      <Field id="pesan" label="Pesan" error={galat.pesan}>
+      <Field id="pesan" label={t.labelPesan} error={galat.pesan} opsional={t.opsional}>
         <Textarea
           className={ISIAN_PESAN}
           id="pesan"
           name="pesan"
           rows={9}
-          placeholder="Sebutkan kebutuhan kalori, tonase, jadwal, dan titik serah…"
+          placeholder={t.isianPesan}
           aria-invalid={!!galat.pesan}
           aria-describedby={galat.pesan ? "pesan-error" : undefined}
         />
@@ -299,7 +303,7 @@ export function ContactForm({
       {/* Umpan bot. Disembunyikan dari mata dan dari pembaca layar, dan
           dikeluarkan dari urutan tab, jadi hanya mesin yang mengisinya. */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
-        <label htmlFor="website">Jangan diisi</label>
+        <label htmlFor="website">{t.janganDiisi}</label>
         <input id="website" name="website" tabIndex={-1} autoComplete="off" />
       </div>
 
@@ -312,11 +316,11 @@ export function ContactForm({
         {mengirim ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Mengirim…
+            {t.sedangMengirim}
           </>
         ) : (
           <>
-            Kirim Pesan
+            {teks(bahasa).umum.kirimPesan}
             <Send className="size-4" />
           </>
         )}
@@ -330,12 +334,15 @@ function Field({
   label,
   error,
   optional,
+  opsional,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
   optional?: boolean;
+  /** Label "(opsional)" ikut bahasa halaman, jadi datang sebagai teks. */
+  opsional: string;
   children: React.ReactNode;
 }) {
   return (
@@ -343,7 +350,7 @@ function Field({
       <Label htmlFor={id} className="text-[1rem] text-ink-strong">
         {label}
         {optional && (
-          <span className="ml-1 font-normal text-ink-strong/50">(opsional)</span>
+          <span className="ml-1 font-normal text-ink-strong/50">{opsional}</span>
         )}
       </Label>
       {children}

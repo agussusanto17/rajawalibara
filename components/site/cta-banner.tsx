@@ -3,6 +3,8 @@ import { ButtonLink } from "@/components/site/button-link";
 import { Glow } from "@/components/site/section";
 import { Reveal } from "@/components/site/reveal";
 import { profil } from "@/lib/konten";
+import { tautan, type Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 
 /**
  * Pita ajakan yang melebar penuh, dipakai bersama beranda dan halaman produk.
@@ -16,13 +18,15 @@ import { profil } from "@/lib/konten";
  * jalan dengan komitmen lebih rendah bagi yang enggan mengisi formulir.
  */
 export async function CtaBanner({
+  bahasa,
   tag,
   eyebrow,
   heading,
   body,
-  aksiLabel = "Hubungi Kami",
+  aksiLabel,
   aksiHref = "/hubungi-kami",
 }: {
+  bahasa: Bahasa;
   tag: string;
   eyebrow: string;
   heading: string;
@@ -30,7 +34,9 @@ export async function CtaBanner({
   aksiLabel?: string;
   aksiHref?: string;
 }) {
-  const company = await profil();
+  const t = teks(bahasa);
+  const label = aksiLabel ?? t.umum.hubungiKami;
+  const company = await profil(bahasa);
   return (
     <section className="relative overflow-hidden border-t border-line bg-surface py-20 text-center sm:py-28">
       <Glow className="-top-32 left-1/2 size-[30rem] -translate-x-1/2" />
@@ -50,11 +56,11 @@ export async function CtaBanner({
 
           <div className="mt-3 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
             <ButtonLink
-              href={aksiHref}
+              href={tautan(bahasa, aksiHref)}
               size="lg"
               className="w-full rounded-lg px-6 sm:w-auto"
             >
-              {aksiLabel}
+              {label}
               <ArrowRight className="size-4" />
             </ButtonLink>
             <ButtonLink
@@ -64,7 +70,7 @@ export async function CtaBanner({
               className="w-full rounded-lg border-line-strong px-6 text-white hover:bg-white/[0.06] sm:w-auto"
             >
               <MessageCircle className="size-4" />
-              Tanya lewat WhatsApp
+              {t.kontak.tanyaWhatsapp}
             </ButtonLink>
           </div>
         </Reveal>

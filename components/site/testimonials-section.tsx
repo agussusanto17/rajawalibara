@@ -1,4 +1,6 @@
 import type { Testimonial } from "@/lib/site";
+import type { Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 
 /**
  * Testimoni sebagai kutipan berdokumen, bukan kartu bertumpuk-miring.
@@ -18,15 +20,18 @@ import type { Testimonial } from "@/lib/site";
  * testimoni sungguhan, dan itu persis hal yang penandanya ada untuk mencegah.
  */
 export function TestimonialsSection({
+  bahasa,
   testimonials,
   maks = 3,
 }: {
+  bahasa: Bahasa;
   testimonials: Testimonial[];
   /** Beranda menampilkan tiga. Selama isinya masih contoh, satu kisi penuh
    *  kutipan bertanda "belum diisi" lebih menonjolkan kekosongannya daripada
    *  menutupinya. */
   maks?: number;
 }) {
+  const kata = teks(bahasa);
   const items = testimonials.slice(0, maks);
 
   // Tanpa satu pun kutipan, seluruh bagian ini tidak ditampilkan. Judul yang
@@ -39,18 +44,18 @@ export function TestimonialsSection({
       <div className="shell">
         <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-end lg:gap-16">
           <div>
-            <p className="eyebrow eyebrow-terang">Kutipan klien</p>
+            <p className="eyebrow eyebrow-terang">{kata.testimoni.eyebrow}</p>
             <h2 className="mt-6 text-[2.25rem] leading-[1.06] sm:text-[3rem]">
               {/* Spasi eksplisit: <br> tidak menyumbang teks apa pun ke nama
                   aksesibel, jadi tanpa ini judulnya terbaca "Yang merekakatakan"
                   oleh pembaca layar. */}
-              Yang mereka{" "}
+              {kata.testimoni.judulBaris1}{" "}
               <br />
-              katakan
+              {kata.testimoni.judulBaris2}
             </h2>
           </div>
           <p className="text-base leading-relaxed text-ink-strong/60 lg:pb-2">
-            Dari bagian pengadaan dan operasional yang menerima kargo kami.
+            {kata.testimoni.keterangan}
           </p>
         </div>
 
@@ -67,7 +72,7 @@ export function TestimonialsSection({
               >
                 {t.contoh && (
                   <p className="mb-5 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-strong/50">
-                    Contoh — belum diisi
+                    {kata.testimoni.contohBelumDiisi}
                   </p>
                 )}
 

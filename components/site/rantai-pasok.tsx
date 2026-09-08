@@ -1,5 +1,8 @@
 import Image from "next/image";
 import { rantaiPasok } from "@/lib/site";
+import { rantaiPasok as rantaiPasokEn } from "@/lib/site.en";
+import type { Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 import { Reveal } from "@/components/site/reveal";
 import { Section } from "@/components/site/section";
 
@@ -18,31 +21,32 @@ import { Section } from "@/components/site/section";
  * Nomornya berarti: ini urutan yang benar-benar terjadi satu demi satu, bukan
  * daftar yang kebetulan dinomori.
  */
-export function RantaiPasok() {
+export function RantaiPasok({ bahasa }: { bahasa: Bahasa }) {
+  const t = teks(bahasa).rantaiPasok;
+  const tahapan = bahasa === "en" ? rantaiPasokEn : rantaiPasok;
   return (
     <Section bordered className="bg-surface/30">
       <div className="max-w-2xl">
-        <p className="eyebrow">6 tahap</p>
+        <p className="eyebrow">{t.eyebrow}</p>
         <h2 className="mt-6 text-[2.5rem] uppercase text-white sm:text-[3.5rem] lg:text-[4rem]">
-          Dari tambang
+          {t.judulBaris1}
           <br />
-          sampai boiler
+          {t.judulBaris2}
         </h2>
         <p className="mt-6 text-base leading-relaxed text-muted-fg sm:text-lg">
-          Yang dikerjakan seorang pedagang batubara terletak di antara keduanya.
-          Ini urutannya.
+          {t.keterangan}
         </p>
       </div>
 
       <ol className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {rantaiPasok.map((t, i) => (
-          <li key={t.tahap} className="flex">
+        {tahapan.map((tahap, i) => (
+          <li key={tahap.tahap} className="flex">
             <Reveal delay={(i % 3) * 90} className="flex w-full">
               <article className="flex w-full flex-col overflow-hidden rounded-2xl border border-line bg-background">
                 <div className="relative aspect-[16/10] overflow-hidden">
                   <Image
-                    src={t.foto}
-                    alt={t.alt}
+                    src={tahap.foto}
+                    alt={tahap.alt}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                     className="object-cover"
@@ -59,15 +63,15 @@ export function RantaiPasok() {
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span aria-hidden="true" className="h-px w-4 bg-line-strong" />
-                    <span className="text-muted-fg">{t.tahap}</span>
+                    <span className="text-muted-fg">{tahap.tahap}</span>
                   </p>
 
                   <h3 className="mt-4 text-xl leading-snug text-white">
-                    {t.judul}
+                    {tahap.judul}
                   </h3>
 
                   <p className="mt-2.5 text-base leading-relaxed text-muted-fg">
-                    {t.isi}
+                    {tahap.isi}
                   </p>
                 </div>
               </article>

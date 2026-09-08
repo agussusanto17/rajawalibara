@@ -105,6 +105,9 @@ export default async function HalamanPengaturan({
               { k: "alamatSingkat", label: "Alamat singkat", jenis: "teks", petunjuk: "Satu baris untuk footer dan kartu kontak." },
               { k: "telepon", label: "Telepon", jenis: "teks", petunjuk: "Boleh kosong — hanya dirender kalau kantor ini memang punya nomor sendiri." },
               { k: "email", label: "Email", jenis: "teks" },
+              { k: "namaEn", label: "Nama kantor · English", jenis: "teks", petunjuk: "Kosong berarti belum diterjemahkan; halaman /en memakai teks Indonesianya." },
+              { k: "alamatEn", label: "Alamat lengkap · English", jenis: "panjang", baris: 3, petunjuk: "Umumnya dibiarkan sama — alamat dibaca kurir dan aplikasi peta dalam bahasa aslinya." },
+              { k: "alamatSingkatEn", label: "Alamat singkat · English", jenis: "teks" },
               {
                 k: "mapsCid",
                 label: "Google Maps CID",
@@ -128,6 +131,7 @@ export default async function HalamanPengaturan({
             labelBaru="Slide baru"
             bidang={[
               { k: "foto", label: "Foto", jenis: "media" },
+              { k: "keteranganEn", label: "Keterangan · English", jenis: "teks" },
               {
                 k: "keterangan",
                 label: "Keterangan",

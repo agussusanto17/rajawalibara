@@ -128,7 +128,10 @@ export default async function HalamanIsi({
             judul="Misi perusahaan"
             keterangan="Daftar bernomor di halaman tentang kami, di sebelah visi. Satu butir satu kalimat utuh — tidak ada kolom keterangan, karena memecahnya jadi judul plus penjelasan berarti mengarang separuhnya."
             labelBaru="Butir misi baru"
-            bidang={[{ k: "judul", label: "Butir misi", jenis: "panjang", baris: 2 }]}
+            bidang={[
+              { k: "judul", label: "Butir misi", jenis: "panjang", baris: 2 },
+              { k: "judulEn", label: "Butir misi · English", jenis: "panjang", baris: 2 },
+            ]}
             awal={misi}
             simpan={simpanMisi}
             hapus={hapusMisi}
@@ -176,6 +179,8 @@ export default async function HalamanIsi({
             bidang={[
               { k: "judul", label: "Pertanyaan", jenis: "teks" },
               { k: "isi", label: "Jawaban", jenis: "panjang", baris: 4 },
+              { k: "judulEn", label: "Pertanyaan · English", jenis: "teks" },
+              { k: "isiEn", label: "Jawaban · English", jenis: "panjang", baris: 4 },
             ]}
             awal={faq}
             simpan={simpanFaq}
@@ -195,6 +200,8 @@ export default async function HalamanIsi({
               { k: "tahun", label: "Tahun", jenis: "teks", lebar: "sempit", petunjuk: "Boleh ditulis sebagai rentang, misalnya 2024–2025." },
               { k: "judul", label: "Judul", jenis: "teks" },
               { k: "isi", label: "Isi", jenis: "panjang", baris: 3 },
+              { k: "judulEn", label: "Judul · English", jenis: "teks" },
+              { k: "isiEn", label: "Isi · English", jenis: "panjang", baris: 3 },
             ]}
             awal={perjalanan}
             simpan={simpanPerjalanan}
@@ -216,6 +223,9 @@ export default async function HalamanIsi({
               { k: "lokasi", label: "Lokasi", jenis: "teks", petunjuk: "Boleh kosong — tidak dirender kalau kosong." },
               { k: "tahun", label: "Tahun", jenis: "teks", lebar: "sempit" },
               { k: "ringkas", label: "Keterangan", jenis: "panjang", baris: 3 },
+              { k: "judulEn", label: "Judul · English", jenis: "teks" },
+              { k: "lokasiEn", label: "Lokasi · English", jenis: "teks" },
+              { k: "ringkasEn", label: "Keterangan · English", jenis: "panjang", baris: 3 },
             ]}
             awal={proyekSiap}
             simpan={simpanProyek}

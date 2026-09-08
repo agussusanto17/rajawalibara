@@ -91,6 +91,7 @@ export default async function HalamanMitra({
                 petunjuk: "Dipakai juga sebagai label di kartu beranda.",
               },
               { k: "logo", label: "Logo", jenis: "media" },
+              { k: "sektorEn", label: "Sektor · English", jenis: "teks" },
             ]}
             awal={mitraSiap}
             simpan={simpanMitra}
@@ -112,6 +113,8 @@ export default async function HalamanMitra({
               { k: "peran", label: "Peran", jenis: "teks" },
               { k: "organisasi", label: "Organisasi", jenis: "teks" },
               { k: "foto", label: "Foto", jenis: "media" },
+              { k: "kutipanEn", label: "Kutipan · English", jenis: "panjang", baris: 4 },
+              { k: "peranEn", label: "Peran · English", jenis: "teks" },
               {
                 k: "contoh",
                 label: "Ini kutipan contoh, bukan testimoni sungguhan",

@@ -1,4 +1,6 @@
 import { logoMitra, namaMitra, profil } from "@/lib/konten";
+import type { Bahasa } from "@/lib/bahasa";
+import { isi as isiPola, teks } from "@/lib/teks";
 import { Marquee } from "@/components/site/marquee";
 import { LogoMitra, TIP_GELAP, TIP_TERANG } from "@/components/site/logo-mitra";
 import { Reveal } from "@/components/site/reveal";
@@ -19,11 +21,18 @@ import { Reveal } from "@/components/site/reveal";
  * Yang TIDAK pernah dilakukan: menempelkan logo yang tidak diberikan. Itu
  * klaim kemitraan, dan yang membacanya justru pihak yang bisa mengeceknya.
  */
-export async function ClientLogos({ terang = false }: { terang?: boolean }) {
+export async function ClientLogos({
+  bahasa,
+  terang = false,
+}: {
+  bahasa: Bahasa;
+  terang?: boolean;
+}) {
+  const kata = teks(bahasa);
   const [clientLogos, nama, company] = await Promise.all([
     logoMitra(),
-    namaMitra(),
-    profil(),
+    namaMitra(bahasa),
+    profil(bahasa),
   ]);
   const hasLogos = clientLogos.length > 0;
   // Dipakai di dua latar. Warna dan tepi lembutnya ikut, bukan dipaksa gelap.
@@ -58,8 +67,7 @@ export async function ClientLogos({ terang = false }: { terang?: boolean }) {
         <Reveal>
           <p className={`flex items-center justify-center gap-2.5 text-sm ${t.teks}`}>
             <span className="size-2.5 rounded-sm bg-brand" />
-            Dipercaya {company.clientCount} perusahaan di sektor industri dan
-            energi
+            {isiPola(kata.klien.dipercayaOleh, { jumlah: company.clientCount })}
           </p>
         </Reveal>
       </div>

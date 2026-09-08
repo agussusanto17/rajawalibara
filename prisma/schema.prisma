@@ -44,7 +44,7 @@ model PesanMasuk {
   email      String
   telepon    String?
   organisasi String?
-  pesan      String @db.Text
+  pesan      String  @db.Text
 
   /// Slug komoditas bila pengirim datang dari halaman produk tertentu.
   produk   String?
@@ -93,17 +93,17 @@ enum StatusTerbit {
 /// di luar direktori repo (lihat lib/cms/media.ts); baris ini menyimpan jalur
 /// relatifnya beserta metadata untuk menampilkannya.
 model Media {
-  id    String  @id @default(uuid()) @db.Char(36)
+  id     String  @id @default(uuid()) @db.Char(36)
   /// Jalur relatif berkas di folder unggahan, atau kosong bila gambarnya milik
   /// pihak lain dan hanya ditautkan. Menjadi acuan saat berkas perlu dihapus;
   /// yang kosong tidak pernah dihapus dari mana pun.
-  kunci String? @unique
+  kunci  String? @unique
   /// Alamat yang dipakai di tag img. Untuk berkas milik sendiri berupa jalur
   /// relatif /media/<kunci> yang dilayani route handler.
-  url   String  @db.VarChar(500)
+  url    String  @db.VarChar(500)
   /// Teks alternatif. Wajib diisi editor: gambar tanpa alt tidak terbaca
   /// pembaca layar dan tidak terbaca mesin telusur.
-  alt    String @db.VarChar(300)
+  alt    String  @db.VarChar(300)
   tipe   String
   lebar  Int?
   tinggi Int?
@@ -235,11 +235,11 @@ model Produk {
   /// atau batas ("maks. 1%"), dan memaksanya jadi bilangan menutup keduanya.
   spesifikasi Json
   /// [{ icon, title, body }] — keunggulan tingkatan ini.
-  keunggulan  Json    @default("[]")
+  keunggulan  Json @default("[]")
   /// [{ src, caption }] — kosong berarti halaman menampilkan slot bertanda.
-  galeri      Json    @default("[]")
+  galeri      Json @default("[]")
   /// [{ title, body }] — alur pemesanan. Kosong berarti memakai langkah umum.
-  langkah     Json    @default("[]")
+  langkah     Json @default("[]")
 
   /// Pembeli yang memakai komoditas ini.
   ///
@@ -260,6 +260,20 @@ model Produk {
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  /// Padanan bahasa Inggris; NULL jatuh ke kolom Indonesia.
+  /// spesifikasiEn menyimpan parameter dan satuan yang dialihbahasakan.
+  /// Angkanya WAJIB sama dengan versi Indonesia — hanya format ribuan dan
+  /// desimalnya yang berbeda. Dua bahasa yang menyebut angka berlainan untuk
+  /// kargo yang sama adalah sengketa kontrak, bukan salah ketik.
+  namaEn        String? @map("nama_en")
+  namaPanjangEn String? @map("nama_panjang_en") @db.VarChar(300)
+  ringkasEn     String? @map("ringkas_en") @db.VarChar(300)
+  deskripsiEn   String? @map("deskripsi_en") @db.Text
+  peruntukanEn  String? @map("peruntukan_en") @db.VarChar(300)
+  asalEn        String? @map("asal_en") @db.Text
+  spesifikasiEn Json?   @map("spesifikasi_en")
+  keunggulanEn  Json?   @map("keunggulan_en")
 
   @@index([status, urutan])
   @@map("produk")
@@ -286,6 +300,10 @@ model AnggotaTim {
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
 
+  /// Nama orang tidak diterjemahkan; jabatan dan bio ya.
+  jabatanEn String? @map("jabatan_en")
+  bioEn     String? @map("bio_en") @db.Text
+
   @@index([kelompok, urutan])
   @@map("anggota_tim")
 }
@@ -309,6 +327,9 @@ model Mitra {
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  /// Nama perusahaan tidak diterjemahkan; sektornya ya.
+  sektorEn String? @map("sektor_en")
 
   @@map("mitra")
 }
@@ -340,6 +361,14 @@ model Perusahaan {
 
   diubahPada DateTime @updatedAt @map("diubah_pada")
 
+  /// Padanan bahasa Inggris. NULL berarti belum diterjemahkan; halaman /en
+  /// jatuh ke kolom Indonesia, bukan menampilkan ruang kosong.
+  taglineEn       String? @map("tagline_en") @db.VarChar(300)
+  introEn         String? @map("intro_en") @db.Text
+  visiEn          String? @map("visi_en") @db.Text
+  sejarahEn       String? @map("sejarah_en") @db.Text
+  latarBelakangEn String? @map("latar_belakang_en") @db.Text
+
   @@map("perusahaan")
 }
 
@@ -361,15 +390,22 @@ model Kantor {
   telepon       String?
   email         String?
   /// Penanda tempat di Google Maps. Kosong berarti peta tidak dirender.
-  mapsCid String @map("maps_cid") @default("")
-  mapsLat Float  @map("maps_lat") @default(0)
-  mapsLng Float  @map("maps_lng") @default(0)
+  mapsCid       String      @default("") @map("maps_cid")
+  mapsLat       Float       @default(0) @map("maps_lat")
+  mapsLng       Float       @default(0) @map("maps_lng")
 
   urutan Int @default(0)
 
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  /// Alamat fisik sengaja tetap bisa diisi EN, tetapi umumnya dibiarkan sama:
+  /// alamat dibaca kurir dan aplikasi peta dalam bahasa aslinya. Yang benar
+  /// diterjemahkan biasanya hanya nama kantor dan keterangan wilayahnya.
+  namaEn          String? @map("nama_en")
+  alamatEn        String? @map("alamat_en") @db.Text
+  alamatSingkatEn String? @map("alamat_singkat_en") @db.VarChar(300)
 
   @@index([urutan])
   @@map("kantor")
@@ -399,6 +435,8 @@ model Slide {
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  keteranganEn String? @map("keterangan_en")
 
   @@index([urutan])
   @@map("slide")
@@ -431,6 +469,17 @@ model Beranda {
 
   diubahPada DateTime @updatedAt @map("diubah_pada")
 
+  /// Padanan bahasa Inggris; NULL jatuh ke kolom Indonesia.
+  pitaTagEn             String? @map("pita_tag_en")
+  pitaTeksEn            String? @map("pita_teks_en") @db.VarChar(300)
+  judulEn               String? @map("judul_en") @db.VarChar(500)
+  introEn               String? @map("intro_en") @db.Text
+  ctaUtamaLabelEn       String? @map("cta_utama_label_en")
+  ctaUtamaLabelPendekEn String? @map("cta_utama_label_pendek_en")
+  ctaKeduaLabelEn       String? @map("cta_kedua_label_en")
+  ctaKeduaLabelPendekEn String? @map("cta_kedua_label_pendek_en")
+  manifestoEn           String? @map("manifesto_en") @db.Text
+
   @@map("beranda")
 }
 
@@ -460,6 +509,9 @@ model SeoHalaman {
   deskripsi String? @db.VarChar(300)
 
   diubahPada DateTime @updatedAt @map("diubah_pada")
+
+  judulEn     String? @map("judul_en")
+  deskripsiEn String? @map("deskripsi_en") @db.VarChar(300)
 
   @@map("seo_halaman")
 }
@@ -500,6 +552,9 @@ model BlokKonten {
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
 
+  judulEn String? @map("judul_en") @db.VarChar(300)
+  isiEn   String? @map("isi_en") @db.Text
+
   @@index([jenis, urutan])
   @@map("blok_konten")
 }
@@ -516,6 +571,9 @@ model Perjalanan {
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  judulEn String? @map("judul_en") @db.VarChar(300)
+  isiEn   String? @map("isi_en") @db.Text
 
   @@index([urutan])
   @@map("perjalanan")
@@ -541,6 +599,10 @@ model Proyek {
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  judulEn   String? @map("judul_en") @db.VarChar(300)
+  lokasiEn  String? @map("lokasi_en")
+  ringkasEn String? @map("ringkas_en") @db.Text
 
   @@index([urutan])
   @@map("proyek")
@@ -572,6 +634,9 @@ model Testimoni {
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
 
+  kutipanEn String? @map("kutipan_en") @db.Text
+  peranEn   String? @map("peran_en")
+
   @@index([urutan])
   @@map("testimoni")
 }
@@ -587,6 +652,10 @@ model Layanan {
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  /// Tanpa @unique, berbeda dari kolom Indonesianya: keunikan sudah dijaga di
+  /// sana, dan menuntutnya dua kali menolak terjemahan yang sah kebetulan sama.
+  namaEn String? @map("nama_en") @db.VarChar(300)
 
   @@index([urutan])
   @@map("layanan")
@@ -609,6 +678,10 @@ model GrupLayanan {
   dibuatPada  DateTime  @default(now()) @map("dibuat_pada")
   diubahPada  DateTime  @updatedAt @map("diubah_pada")
   dihapusPada DateTime? @map("dihapus_pada")
+
+  judulEn   String? @map("judul_en") @db.VarChar(300)
+  isiEn     String? @map("isi_en") @db.Text
+  cakupanEn Json?   @map("cakupan_en")
 
   @@index([urutan])
   @@map("grup_layanan")

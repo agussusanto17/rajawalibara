@@ -78,6 +78,8 @@ export default async function HalamanLayanan({
               { k: "ikon", label: "Ikon", jenis: "ikon" },
               { k: "judul", label: "Judul", jenis: "teks" },
               { k: "isi", label: "Isi", jenis: "panjang", baris: 3 },
+              { k: "judulEn", label: "Judul · English", jenis: "teks" },
+              { k: "isiEn", label: "Isi · English", jenis: "panjang", baris: 3 },
               {
                 k: "cakupan",
                 label: "Bidang usaha yang dicakup",
@@ -100,7 +102,10 @@ export default async function HalamanLayanan({
             judul="Bidang usaha"
             keterangan="Teks resmi sesuai akta. Tidak tampil langsung ke pengunjung; kelompok layanan yang merujuknya."
             labelBaru="Bidang baru"
-            bidang={[{ k: "nama", label: "Nama bidang usaha", jenis: "teks" }]}
+            bidang={[
+              { k: "nama", label: "Nama bidang usaha", jenis: "teks" },
+              { k: "namaEn", label: "Nama bidang usaha · English", jenis: "teks", petunjuk: "Kode KBLI-nya tetap; hanya keterangannya yang dialihbahasakan." },
+            ]}
             awal={bidang}
             simpan={simpanLayanan}
             hapus={hapusLayanan}

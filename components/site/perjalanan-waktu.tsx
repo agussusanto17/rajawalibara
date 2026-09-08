@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Glow } from "@/components/site/section";
+import { teks } from "@/lib/teks";
+import type { Bahasa } from "@/lib/bahasa";
 
 
 const jepit = (n: number) => Math.min(1, Math.max(0, n));
@@ -19,7 +21,14 @@ export type Tonggak = { tahun: string; judul: string; body: string };
 
 /** Datanya datang sebagai props: komponen ini memakai state gulir, jadi ia
  *  harus berjalan di peramban dan tidak bisa membaca basis data sendiri. */
-export function PerjalananWaktu({ perjalanan }: { perjalanan: Tonggak[] }) {
+export function PerjalananWaktu({
+  bahasa,
+  perjalanan,
+}: {
+  bahasa: Bahasa;
+  perjalanan: Tonggak[];
+}) {
+  const t = teks(bahasa);
   const ref = useRef<HTMLDivElement>(null);
   const [maju, setMaju] = useState(0);
   const n = perjalanan.length;
@@ -76,15 +85,15 @@ export function PerjalananWaktu({ perjalanan }: { perjalanan: Tonggak[] }) {
         <div className="flex flex-col items-center text-center">
           <span aria-hidden="true" className="size-3 rounded-sm bg-brand" />
           <p className="mt-4 text-sm font-semibold leading-snug text-white">
-            Berdiri di Jakarta,
+            {t.tentang.perjalananBaris1}
             <br />
-            beroperasi dari Kalimantan
+            {t.tentang.perjalananBaris2}
           </p>
           <span aria-hidden="true" className="mt-6 h-16 w-px bg-brand/60" />
         </div>
 
         <h2 className="mx-auto mt-8 max-w-4xl text-center text-[2.5rem] leading-[1.05] text-white sm:text-[3.5rem] lg:text-[4.25rem]">
-          Dari perdagangan pertama sampai hari ini
+          {t.tentang.perjalananJudul}
         </h2>
 
         <div ref={ref} className="relative mt-20 sm:mt-24">

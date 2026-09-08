@@ -1,5 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { profil, type Profil } from "@/lib/konten";
+import { tautan, type Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 import { produkTerbit } from "@/lib/konten";
 import { ButtonLink } from "@/components/site/button-link";
 import { CountUp } from "@/components/site/count-up";
@@ -37,8 +39,12 @@ const statistik = (jumlahProduk: number, company: Profil) => [
   },
 ];
 
-export async function NumbersSection() {
-  const [products, company] = await Promise.all([produkTerbit(), profil()]);
+export async function NumbersSection({ bahasa }: { bahasa: Bahasa }) {
+  const t = teks(bahasa);
+  const [products, company] = await Promise.all([
+    produkTerbit(bahasa),
+    profil(bahasa),
+  ]);
   const STATS = statistik(products.length, company);
   return (
     <Section id="angka" className="relative overflow-hidden">
@@ -64,9 +70,9 @@ export async function NumbersSection() {
         <div className="grid gap-10 lg:grid-cols-[1fr_262px] lg:items-end lg:gap-16">
           <Reveal>
             <h2 className="text-[2.5rem] uppercase text-white sm:text-[3.5rem] lg:text-[4rem]">
-              Dipercaya, lalu
-              <br />
-              dipertahankan
+              {t.angka.judulBaris1}
+                <br />
+                {t.angka.judulBaris2}
             </h2>
           </Reveal>
 
@@ -75,10 +81,10 @@ export async function NumbersSection() {
             className="flex flex-col items-start gap-6 lg:pb-4"
           >
             <p className="text-base leading-relaxed text-muted-fg sm:text-lg">
-              Dihitung ulang dari basis data, bukan angka yang diketik sekali lalu ditinggal.
+              {t.angka.keterangan}
             </p>
-            <ButtonLink href="/hubungi-kami" size="lg" className="rounded-lg">
-              Mulai Diskusi
+            <ButtonLink href={tautan(bahasa, "/hubungi-kami")} size="lg" className="rounded-lg">
+              {t.angka.mulaiDiskusi}
               <ArrowRight className="size-4" />
             </ButtonLink>
           </Reveal>

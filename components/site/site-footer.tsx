@@ -8,6 +8,9 @@ import {
   Phone,
 } from "lucide-react";
 import { footerLinks } from "@/lib/site";
+import { footerLinks as footerLinksEn } from "@/lib/site.en";
+import { tautan, type Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 import { profil, type Profil } from "@/lib/konten";
 import { kantorPusat } from "@/lib/konten";
 import { Logo } from "@/components/site/logo";
@@ -28,8 +31,13 @@ const kontak = (company: Profil, alamatSingkat: string) => [
   { icon: Mail, label: company.email, href: `mailto:${company.email}` },
 ];
 
-export async function SiteFooter() {
-  const [company, pusat] = await Promise.all([profil(), kantorPusat()]);
+export async function SiteFooter({ bahasa }: { bahasa: Bahasa }) {
+  const t = teks(bahasa);
+  const tautanKaki = bahasa === "en" ? footerLinksEn : footerLinks;
+  const [company, pusat] = await Promise.all([
+    profil(bahasa),
+    kantorPusat(bahasa),
+  ]);
   const CONTACT = kontak(company, pusat.alamatSingkat);
   return (
     <footer className="relative overflow-hidden bg-background">
@@ -41,27 +49,39 @@ export async function SiteFooter() {
           <div className="max-w-md">
             <Logo />
             <h2 className="mt-8 text-3xl leading-[1.15] text-white sm:text-[2.5rem]">
-              Sebutkan kebutuhan
+              {t.footer.judulSebutkanBaris1}
               <br />
-              pasokan Anda.
+              {t.footer.judulSebutkanBaris2}
             </h2>
             <Link
-              href="/hubungi-kami"
+              href={tautan(bahasa, "/hubungi-kami")}
               className="group mt-8 inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3.5 text-base font-bold text-background transition-colors hover:bg-brand-bright focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              Hubungi Kami
+              {t.umum.hubungiKami}
               <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </Link>
             <p className="mt-5 text-base text-muted-fg">
-              Dibalas dalam 1×24 jam kerja.
+              {t.footer.dibalas}
             </p>
           </div>
 
-          <FooterColumn title="Layanan" links={footerLinks.layanan} />
-          <FooterColumn title="Perusahaan" links={footerLinks.perusahaan} />
+          <FooterColumn
+            title={t.footer.judulLayanan}
+            links={tautanKaki.layanan.map((l) => ({
+              ...l,
+              href: tautan(bahasa, l.href),
+            }))}
+          />
+          <FooterColumn
+            title={t.footer.judulPerusahaan}
+            links={tautanKaki.perusahaan.map((l) => ({
+              ...l,
+              href: tautan(bahasa, l.href),
+            }))}
+          />
 
           <div>
-            <h3 className="text-lg font-semibold text-white">Kontak</h3>
+            <h3 className="text-lg font-semibold text-white">{t.footer.judulKontak}</h3>
             <ul className="mt-5 space-y-1 text-base text-muted-fg">
               {CONTACT.map((c) => (
                 <li key={c.label}>
@@ -90,8 +110,7 @@ export async function SiteFooter() {
 
         <div className="flex flex-col gap-2 border-t border-line py-8 text-sm text-muted-fg sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {company.legalName}. All rights
-            reserved.
+            © {new Date().getFullYear()} {company.legalName}. {t.footer.hakCipta}
           </p>
           {/* Tautan jangkar, bukan tombol ber-JavaScript: `#konten` sudah ada
               di <main>, dan `scroll-behavior: smooth` global yang mengurus
@@ -100,7 +119,7 @@ export async function SiteFooter() {
             href="#konten"
             className="group -my-1.5 inline-flex items-center gap-2 self-start py-1.5 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:self-auto"
           >
-            Kembali ke atas
+            {t.footer.kembaliKeAtas}
             <span className="inline-flex size-8 items-center justify-center rounded-full border border-line-strong transition-colors group-hover:border-brand group-hover:bg-brand group-hover:text-background">
               <ArrowUp className="size-4" />
             </span>

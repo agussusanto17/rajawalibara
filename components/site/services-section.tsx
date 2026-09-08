@@ -1,6 +1,9 @@
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { fotoLayanan } from "@/lib/site";
+import { fotoLayanan as fotoLayananEn } from "@/lib/site.en";
+import { tautan, type Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 import { kelompokLayanan } from "@/lib/konten";
 import { ButtonLink } from "@/components/site/button-link";
 import { Icon } from "@/components/site/icon-map";
@@ -18,28 +21,30 @@ import { Section } from "@/components/site/section";
  * butir itulah isinya yang paling dicari: pembaca ingin tahu apakah sektornya
  * sendiri ada di daftar.
  */
-export async function ServicesSection() {
-  const serviceGroups = await kelompokLayanan();
+export async function ServicesSection({ bahasa }: { bahasa: Bahasa }) {
+  const t = teks(bahasa);
+  const foto = bahasa === "en" ? fotoLayananEn : fotoLayanan;
+  const serviceGroups = await kelompokLayanan(bahasa);
   if (serviceGroups.length === 0) return null;
 
   return (
     <Section id="layanan">
       <div className="grid gap-10 lg:grid-cols-[1fr_300px] lg:items-end lg:gap-16">
         <Reveal>
-          <p className="eyebrow">KBLI 46710</p>
+          <p className="eyebrow">{t.layananRingkas.eyebrow}</p>
           <h2 className="mt-6 text-[2.5rem] uppercase text-white sm:text-[3.5rem] lg:text-[4rem]">
-            Layanan
-            <br />
-            yang kami jalankan
+            {t.layananRingkas.judulBaris1}
+              <br />
+              {t.layananRingkas.judulBaris2}
           </h2>
         </Reveal>
 
         <Reveal delay={120} className="flex flex-col items-start gap-6 lg:pb-4">
           <p className="text-base leading-relaxed text-muted-fg sm:text-lg">
-            Dari pemilihan tambang sampai kargo diterima di lokasi Anda.
+            {t.layananRingkas.keterangan}
           </p>
-          <ButtonLink href="/layanan" size="lg" className="rounded-lg">
-            Rincian Layanan
+          <ButtonLink href={tautan(bahasa, "/layanan")} size="lg" className="rounded-lg">
+            {t.layananRingkas.rincian}
             <ArrowRight className="size-4" />
           </ButtonLink>
         </Reveal>
@@ -47,15 +52,15 @@ export async function ServicesSection() {
 
       <div className="mt-16 grid gap-5 lg:grid-cols-3">
         {serviceGroups.map((s, i) => {
-          const foto = fotoLayanan[s.title];
+          const gambar = foto[s.title];
           return (
             <Reveal key={s.title} delay={i * 90} className="flex">
               <article className="group flex w-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-300 hover:border-brand/40">
-                {foto && (
+                {gambar && (
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <Image
-                      src={foto.url}
-                      alt={foto.alt}
+                      src={gambar.url}
+                      alt={gambar.alt}
                       fill
                       sizes="(max-width: 1024px) 100vw, 400px"
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"

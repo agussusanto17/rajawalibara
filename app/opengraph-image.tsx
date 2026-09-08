@@ -35,7 +35,7 @@ export default async function Image() {
   // Path ditulis utuh sebagai teks, bukan disusun dari potongan: penyusunan
   // dinamis membuat Turbopack gagal melacaknya dan ia menarik seluruh project
   // ke dalam bundle server.
-  const produk = await produkTerbit();
+  const produk = await produkTerbit("id");
 
   const [logo, semiBold, regular] = await Promise.all([
     readFile(join(process.cwd(), "public/logo/logo-og.png")),

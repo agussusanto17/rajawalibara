@@ -1,7 +1,5 @@
-import type { Metadata } from "next";
 import { ArrowRight, BadgeCheck, MessageCircle } from "lucide-react";
-import { canonical } from "@/lib/seo";
-import { bilangan, fotoTentang } from "@/lib/site";
+import { bilangan, fotoTentang, nav } from "@/lib/site";
 import {
   alasanMemilih,
   anggotaTim,
@@ -21,61 +19,67 @@ import { KartuOrang } from "@/components/site/kartu-orang";
 import { PerjalananWaktu } from "@/components/site/perjalanan-waktu";
 import { Reveal } from "@/components/site/reveal";
 import { PageHero } from "@/components/site/page-hero";
+import { nav as navEn, bilangan as bilanganEn } from "@/lib/site.en";
+import { isi as isiPola, teks } from "@/lib/teks";
+import { tautan, type Bahasa } from "@/lib/bahasa";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const company = await profil();
+/** Foto latar blok "kenapa bekerja dengan kami". Sama di kedua bahasa. */
+const FOTO_ALASAN = "/foto/rantai-1-seleksi.webp";
+
+/** Metadata halaman tentang kami, sama bentuknya di kedua bahasa. */
+export async function metaTentangKami(bahasa: Bahasa) {
+  const company = await profil(bahasa);
   return {
-  title: "Tentang Kami",
-  description: company.history,
-  // Menimpa canonical "/" yang diwarisi dari layout root.
-  ...canonical("/tentang-kami"),
-  openGraph: { type: "website", url: "/tentang-kami", title: "Tentang Kami" },
+    judul: (bahasa === "en" ? navEn : nav)[1].label,
+    deskripsi: company.history,
+    jalur: tautan(bahasa, "/tentang-kami"),
   };
 }
 
-/* Satu sumber dengan seluruh situs. Lihat catatan pada blok FOTO di
-   lib/site.ts. */
-const FOTO_ALASAN = "/foto/rantai-1-seleksi.webp";
-
-const HERO_TITLE = "Mitra energi yang andal dan profesional";
-const HERO_DESCRIPTION =
-  "Perdagangan batubara dari sumber tambang terseleksi, dengan spesifikasi yang disesuaikan permintaan dan logistik darat serta laut yang terintegrasi.";
-
-
-
-export default async function TentangKamiPage() {
+export async function TentangKami({ bahasa }: { bahasa: Bahasa }) {
+  const t = teks(bahasa);
+  const menu = bahasa === "en" ? navEn : nav;
+  const angka = bahasa === "en" ? bilanganEn : bilangan;
   const [company, values, semuaAlasan, leadership, team, pusat, misi] =
     await Promise.all([
-      profil(),
-      nilaiPerusahaan(),
-      alasanMemilih(),
-      anggotaTim("PIMPINAN"),
-      anggotaTim("TIM"),
-      kantorPusat(),
-      misiPerusahaan(),
+      profil(bahasa),
+      nilaiPerusahaan(bahasa),
+      alasanMemilih(bahasa),
+      anggotaTim(bahasa, "PIMPINAN"),
+      anggotaTim(bahasa, "TIM"),
+      kantorPusat(bahasa),
+      misiPerusahaan(bahasa),
     ]);
   const alasan = semuaAlasan.slice(0, 4);
 
   return (
     <>
       <PageHero
-        eyebrow={`Sejak ${company.founded}`}
-        title={HERO_TITLE}
-        description={HERO_DESCRIPTION}
-        breadcrumb={[{ label: "Tentang Kami" }]}
+        eyebrow={isiPola(t.tentang.heroEyebrow, { tahun: company.founded })}
+        title={t.tentang.heroJudul}
+        description={t.tentang.heroIsi}
+        breadcrumb={[{ label: menu[1].label }]}
         fakta={[
-          { label: "Berdiri", nilai: String(company.founded), catatan: "24 Juni 2021" },
-          { label: "Kantor", nilai: pusat.alamatSingkat, catatan: "Pusat" },
           {
-            label: "Klien",
-            nilai: `${company.clientCount} perusahaan`,
-            catatan: "Industri, energi, manufaktur",
+              label: t.tentang.faktaBerdiri,
+              nilai: String(company.founded),
+              catatan: t.tentang.faktaBerdiriCatatan,
+            },
+          {
+              label: t.tentang.faktaKantor,
+              nilai: pusat.alamatSingkat,
+              catatan: t.tentang.faktaKantorCatatan,
+            },
+          {
+            label: t.tentang.faktaKlien,
+            nilai: isiPola(t.tentang.jumlahPerusahaan, { jumlah: company.clientCount }),
+            catatan: t.tentang.faktaKlienCatatan,
           },
         ]}
         aksi={
           <>
-            <ButtonLink href="/layanan" size="lg" className="w-full rounded-lg px-6 sm:w-auto">
-              Lihat Layanan
+            <ButtonLink href={tautan(bahasa, "/layanan")} size="lg" className="w-full rounded-lg px-6 sm:w-auto">
+              {t.tentang.lihatLayanan}
               <ArrowRight className="size-4" />
             </ButtonLink>
             <ButtonLink
@@ -85,14 +89,14 @@ export default async function TentangKamiPage() {
               className="w-full rounded-lg border-line-strong px-6 text-white hover:bg-white/[0.06] sm:w-auto"
             >
               <MessageCircle className="size-4" />
-              Tanya lewat WhatsApp
+              {t.tentang.tanyaWhatsapp}
             </ButtonLink>
           </>
         }
       />
 
       {/* 2 ------------------------------------------------------ Logo klien */}
-      <ClientLogos terang />
+      <ClientLogos bahasa={bahasa} terang />
 
       {/* 3 -------------------------------------------------- Tentang kami */}
       <section className="bg-white py-24 text-ink-strong sm:py-32">
@@ -177,15 +181,14 @@ export default async function TentangKamiPage() {
           <div className="grid gap-10 lg:grid-cols-[1fr_262px] lg:items-end lg:gap-16">
             <Reveal>
               <h2 className="text-[2.5rem] leading-[1.05] sm:text-[3.5rem] lg:text-[4.25rem]">
-                {bilangan(values.length)} hal
+                {isiPola(t.tentang.nilaiJudulBaris1, { bilangan: angka(values.length) })}
                 <br />
-                yang kami jaga
+                {t.tentang.nilaiJudulBaris2}
               </h2>
             </Reveal>
             <Reveal delay={120} className="lg:pb-4">
               <p className="text-base leading-relaxed text-ink-strong/65 sm:text-lg">
-                Yang menentukan cara kami mengambil keputusan, bukan yang
-                dipajang di dinding kantor.
+                {t.tentang.nilaiKeterangan}
               </p>
             </Reveal>
           </div>
@@ -195,7 +198,7 @@ export default async function TentangKamiPage() {
       </section>
 
       {/* 5 ------------------------------------------------- Perjalanan kami */}
-      <PerjalananWaktu perjalanan={await tonggak()} />
+      <PerjalananWaktu bahasa={bahasa} perjalanan={await tonggak(bahasa)} />
 
       {/* 6 ---------------------------------------------------------- Alasan */}
       <section
@@ -206,17 +209,17 @@ export default async function TentangKamiPage() {
           <div className="grid gap-10 lg:grid-cols-[1fr_262px] lg:items-end lg:gap-16">
             <Reveal>
               <h2 className="text-[2.5rem] leading-[1.05] sm:text-[3.5rem] lg:text-[4.25rem]">
-                Kenapa bekerja
+                {t.tentang.alasanJudulBaris1}
                 <br />
-                dengan kami
+                {t.tentang.alasanJudulBaris2}
               </h2>
             </Reveal>
             <Reveal delay={120} className="flex flex-col items-start gap-6 lg:pb-4">
               <p className="text-base leading-relaxed text-ink-strong/65 sm:text-lg">
-                Yang membedakan cara kami bekerja.
+                {t.tentang.alasanKeterangan}
               </p>
-              <ButtonLink href="/hubungi-kami" size="lg" className="rounded-lg">
-                Mulai Diskusi
+              <ButtonLink href={tautan(bahasa, "/hubungi-kami")} size="lg" className="rounded-lg">
+                {t.angka.mulaiDiskusi}
                 <ArrowRight className="size-4" />
               </ButtonLink>
             </Reveal>
@@ -276,10 +279,10 @@ export default async function TentangKamiPage() {
               Pimpinan
             </span>
             <h2 className="mt-6 text-[2.25rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-[3rem]">
-              Yang memimpin {company.name}
+              {isiPola(t.tentang.pimpinanJudul, { nama: company.name })}
             </h2>
             <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-ink-strong/60 sm:text-lg">
-              Yang memutuskan arah, dan ikut menanggung akibatnya.
+              {t.tentang.pimpinanKeterangan}
             </p>
           </Reveal>
 
@@ -346,11 +349,10 @@ export default async function TentangKamiPage() {
         <div className="shell">
           <Reveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-[2.25rem] leading-[1.08] font-semibold tracking-[-0.03em] sm:text-[3rem]">
-              Tim di balik operasi kami
+              {t.tentang.timJudul}
             </h2>
             <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-ink-strong/65 sm:text-lg">
-              Mereka yang mengurus pasokan, logistik, dan dokumen sampai
-              kargo diterima.
+              {t.tentang.timKeterangan}
             </p>
           </Reveal>
 
@@ -368,10 +370,11 @@ export default async function TentangKamiPage() {
       )}
 
       <CtaBanner
-        tag="Konsultasi"
-        eyebrow="Tanpa biaya"
-        heading="Mulai dari satu percakapan"
-        body="Sebutkan kebutuhan kalori, tonase, dan titik serahnya. Tim kami membalas dalam 1×24 jam kerja."
+        bahasa={bahasa}
+        tag={t.umum.tagKonsultasi}
+        eyebrow={t.umum.tanpaBiaya}
+        heading={t.tentang.ctaJudul}
+        body={t.tentang.ctaIsi}
       />
     </>
   );

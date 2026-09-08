@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import { ArrowRight, Check, Plus } from "lucide-react";
-import { canonical, faqSchema, productSchema } from "@/lib/seo";
+import { faqSchema, productSchema } from "@/lib/seo";
 import { fotoLayanan } from "@/lib/site";
+import { fotoLayanan as fotoLayananEn, nav as navEn } from "@/lib/site.en";
+import { nav } from "@/lib/site";
+import { isi as isiPola, teks } from "@/lib/teks";
+import { tautan, type Bahasa } from "@/lib/bahasa";
 import {
   bidangUsaha,
   faq,
@@ -20,26 +23,31 @@ import { CtaBanner } from "@/components/site/cta-banner";
 import { Icon } from "@/components/site/icon-map";
 import { JsonLd } from "@/components/site/json-ld";
 
-export const dynamic = "force-dynamic";
-
-export async function generateMetadata(): Promise<Metadata> {
-  const grup = await kelompokLayanan();
+/** Metadata halaman layanan, sama bentuknya di kedua bahasa. */
+export async function metaLayanan(bahasa: Bahasa) {
+  const grup = await kelompokLayanan(bahasa);
+  const judul = (bahasa === "en" ? navEn : nav)[2].label;
   return {
-    title: "Layanan",
-    description: `Perdagangan batubara domestik dan ekspor, manajemen logistik dan pengapalan, serta pemenuhan kebutuhan energi industri. ${grup.length} lini layanan dengan spesifikasi yang dapat disesuaikan permintaan.`,
-    ...canonical("/layanan"),
-    openGraph: { type: "website", url: "/layanan", title: "Layanan" },
+    judul,
+    deskripsi:
+      bahasa === "en"
+        ? `Domestic and export coal trading, logistics and shipping management, and industrial energy supply. ${grup.length} service lines with specifications adjustable on request.`
+        : `Perdagangan batubara domestik dan ekspor, manajemen logistik dan pengapalan, serta pemenuhan kebutuhan energi industri. ${grup.length} lini layanan dengan spesifikasi yang dapat disesuaikan permintaan.`,
+    jalur: tautan(bahasa, "/layanan"),
   };
 }
 
-export default async function LayananPage() {
+export async function Layanan({ bahasa }: { bahasa: Bahasa }) {
+  const t = teks(bahasa);
+  const foto = bahasa === "en" ? fotoLayananEn : fotoLayanan;
+  const menu = bahasa === "en" ? navEn : nav;
   const [grup, kbli, tingkatan, alur, tanya, company] = await Promise.all([
-    kelompokLayanan(),
-    bidangUsaha(),
-    produkTerbit(),
-    langkah(),
-    faq(),
-    profil(),
+    kelompokLayanan(bahasa),
+    bidangUsaha(bahasa),
+    produkTerbit(bahasa),
+    langkah(bahasa),
+    faq(bahasa),
+    profil(bahasa),
   ]);
 
   return (
@@ -62,9 +70,9 @@ export default async function LayananPage() {
       ))}
 
       <PageHero
-        eyebrow="KBLI 46710 · 46610"
-        title="Layanan"
-        description="Batubara dari sumber tambang terseleksi, diantar sampai titik serah yang Anda tentukan — dengan spesifikasi dan dokumen yang bisa diperiksa."
+        eyebrow={t.layanan.heroEyebrow}
+        title={menu[2].label}
+        description={t.layanan.heroIsi}
         breadcrumb={[{ label: "Layanan" }]}
       />
 
@@ -75,7 +83,7 @@ export default async function LayananPage() {
       <Section>
         <ol className="flex flex-col gap-20 sm:gap-28">
           {grup.map((g, i) => {
-            const foto = fotoLayanan[g.title];
+            const gambar = foto[g.title];
             const balik = i % 2 === 1;
             return (
               <li
@@ -87,15 +95,15 @@ export default async function LayananPage() {
                   <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-line">
                     {foto ? (
                       <Image
-                        src={foto.url}
-                        alt={foto.alt}
+                        src={gambar.url}
+                        alt={gambar.alt}
                         fill
                         sizes="(max-width: 1024px) 100vw, 560px"
                         className="object-cover"
                       />
                     ) : (
                       <div className="grid h-full place-items-center bg-surface text-sm text-muted-fg">
-                        Foto belum diunggah
+                        {t.layanan.fotoBelum}
                       </div>
                     )}
                   </div>
@@ -150,15 +158,14 @@ export default async function LayananPage() {
           <Reveal>
             <p className="eyebrow">GAR 4.200 – 5.800 kcal/kg</p>
             <h2 className="mt-6 text-[2.25rem] uppercase text-white sm:text-[3rem]">
-              Spesifikasi
+              {t.layanan.spesifikasiJudulBaris1}
               <br />
-              yang kami pasok
+              {t.layanan.spesifikasiJudulBaris2}
             </h2>
           </Reveal>
           <Reveal delay={120} className="lg:pb-3">
             <p className="text-base leading-relaxed text-muted-fg">
-              Parameter dapat digeser mengikuti kebutuhan boiler Anda, lalu
-              dituangkan sebagai parameter kontrak beserta toleransinya.
+              {t.layanan.spesifikasiKeterangan}
             </p>
           </Reveal>
         </div>
@@ -170,9 +177,7 @@ export default async function LayananPage() {
             </Reveal>
 
             <p className="mt-5 max-w-2xl text-[0.95rem] leading-relaxed text-muted-fg">
-              Angka di atas adalah kisaran tipikal, bukan komitmen kontrak.
-              Hasil uji laboratorium kargo yang bersangkutan diserahkan bersama
-              penawaran — bukan menyusul setelah kargo berangkat.
+              {t.layanan.spesifikasiCatatan}
             </p>
           </>
         ) : (
@@ -183,12 +188,10 @@ export default async function LayananPage() {
             <div className="flex flex-col items-start gap-6 rounded-2xl border border-dashed border-line-strong p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10">
               <div className="max-w-xl">
                 <h3 className="text-xl text-white">
-                  Tabel spesifikasi sedang disiapkan
+                  {t.layanan.spesifikasiKosongJudul}
                 </h3>
                 <p className="mt-2.5 text-[0.95rem] leading-relaxed text-muted-fg">
-                  Sementara ini, sebutkan kebutuhan kalori, tonase, jadwal, dan
-                  titik serah Anda. Penawaran dikirim beserta hasil uji
-                  laboratorium kargo yang dimaksud, bukan spesifikasi umum.
+                  {t.layanan.spesifikasiKosongIsi}
                 </p>
               </div>
               <ButtonLink
@@ -196,7 +199,7 @@ export default async function LayananPage() {
                 size="lg"
                 className="shrink-0 rounded-lg"
               >
-                Minta Penawaran
+                {t.umum.mintaPenawaran}
                 <ArrowRight className="size-4" />
               </ButtonLink>
             </div>
@@ -208,11 +211,13 @@ export default async function LayananPage() {
       {alur.length > 0 && (
         <Section bordered>
           <div className="max-w-2xl">
-            <p className="eyebrow">{alur.length} langkah</p>
+            <p className="eyebrow">
+                {isiPola(t.layanan.alurLangkah, { jumlah: alur.length })}
+              </p>
             <h2 className="mt-6 text-[2.25rem] uppercase text-white sm:text-[3rem]">
-              Dari permintaan
-              <br />
-              sampai serah terima
+              {t.layanan.alurJudulBaris1}
+                <br />
+                {t.layanan.alurJudulBaris2}
             </h2>
           </div>
 
@@ -242,16 +247,14 @@ export default async function LayananPage() {
         <Section bordered className="bg-surface/30">
           <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-16">
             <div>
-              <p className="eyebrow">Lampiran NIB</p>
+              <p className="eyebrow">{t.layanan.legalitasJudul}</p>
               <h2 className="mt-6 text-[2rem] uppercase leading-[1.08] text-white sm:text-[2.5rem]">
-                Bidang usaha
-                <br />
-                resmi
+                {t.layanan.bidangUsahaBaris1}
+                  <br />
+                  {t.layanan.bidangUsahaBaris2}
               </h2>
               <p className="mt-6 text-base leading-relaxed text-muted-fg">
-                Teks apa adanya dari lampiran NIB {company.nib}. Perizinan
-                berusaha hanya berlaku untuk kode dan ruang lingkup yang
-                tercantum di sana.
+                {isiPola(t.layanan.lampiranIsi, { nib: company.nib })}
               </p>
             </div>
 
@@ -280,11 +283,11 @@ export default async function LayananPage() {
         <Section bordered>
           <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
             <div>
-              <p className="eyebrow">Pertanyaan umum</p>
+              <p className="eyebrow">{t.layanan.faqEyebrow}</p>
               <h2 className="mt-6 text-[2rem] uppercase leading-[1.08] text-white sm:text-[2.5rem]">
-                Yang sering
-                <br />
-                ditanyakan
+                {t.layanan.faqJudulBaris1}
+                  <br />
+                  {t.layanan.faqJudulBaris2}
               </h2>
             </div>
 
@@ -316,11 +319,12 @@ export default async function LayananPage() {
       )}
 
       <CtaBanner
-        tag="Penawaran"
-        eyebrow="Tanpa biaya"
-        heading="Sebutkan spesifikasi yang Anda cari"
-        body="Kalori, tonase, jadwal, dan titik serah. Setiap pesan dibalas dalam 1×24 jam kerja."
-        aksiLabel="Minta Penawaran"
+        bahasa={bahasa}
+        tag={t.umum.tagPenawaran}
+        eyebrow={t.umum.tanpaBiaya}
+        heading={t.layanan.ctaJudul}
+        body={t.layanan.ctaIsi}
+        aksiLabel={t.umum.mintaPenawaran}
       />
     </>
   );

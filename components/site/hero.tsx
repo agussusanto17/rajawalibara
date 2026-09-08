@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { isiBeranda, kantorPusat, profil, slideHero } from "@/lib/konten";
+import { tautan, type Bahasa } from "@/lib/bahasa";
 import { Sorotan } from "@/components/site/sorotan";
 import { ButtonLink } from "@/components/site/button-link";
 import { HeroSlider } from "@/components/site/hero-slider";
@@ -15,12 +16,12 @@ const step = (ms: number) => ({ animationDelay: `${ms}ms` });
  * dicek sendiri di oss.go.id menjawab pertanyaan itu di baris pertama — jauh
  * sebelum paragraf mana pun sempat dibaca.
  */
-export async function Hero() {
-  const [company, teks, pusat, slides] = await Promise.all([
-    profil(),
-    isiBeranda(),
-    kantorPusat(),
-    slideHero(),
+export async function Hero({ bahasa }: { bahasa: Bahasa }) {
+  const [company, isi, pusat, slides] = await Promise.all([
+    profil(bahasa),
+    isiBeranda(bahasa),
+    kantorPusat(bahasa),
+    slideHero(bahasa),
   ]);
 
   return (
@@ -49,14 +50,14 @@ export async function Hero() {
           className="rise mt-7 max-w-[16ch] text-[2.6rem] uppercase leading-[0.96] text-white sm:text-[3.75rem] lg:text-[4.5rem]"
           style={step(80)}
         >
-          <Sorotan teks={teks.judul} />
+          <Sorotan teks={isi.judul} />
         </h1>
 
         <p
           className="rise mt-7 max-w-xl text-lg leading-relaxed text-white/70"
           style={step(160)}
         >
-          {teks.intro}
+          {isi.intro}
         </p>
 
         <div
@@ -64,22 +65,22 @@ export async function Hero() {
           style={step(240)}
         >
           <ButtonLink
-            href={teks.ctaUtamaHref}
+            href={tautan(bahasa, isi.ctaUtamaHref)}
             size="lg"
             className="w-full rounded-lg sm:w-auto"
           >
-            <span className="hidden sm:inline">{teks.ctaUtamaLabel}</span>
-            <span className="sm:hidden">{teks.ctaUtamaLabelPendek}</span>
+            <span className="hidden sm:inline">{isi.ctaUtamaLabel}</span>
+            <span className="sm:hidden">{isi.ctaUtamaLabelPendek}</span>
             <ArrowRight className="size-4" />
           </ButtonLink>
           <ButtonLink
-            href={teks.ctaKeduaHref}
+            href={tautan(bahasa, isi.ctaKeduaHref)}
             size="lg"
             variant="outline"
             className="w-full rounded-lg sm:w-auto"
           >
-            <span className="hidden sm:inline">{teks.ctaKeduaLabel}</span>
-            <span className="sm:hidden">{teks.ctaKeduaLabelPendek}</span>
+            <span className="hidden sm:inline">{isi.ctaKeduaLabel}</span>
+            <span className="sm:hidden">{isi.ctaKeduaLabelPendek}</span>
           </ButtonLink>
         </div>
 

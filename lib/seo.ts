@@ -1,4 +1,5 @@
 import { company, kantor } from "@/lib/site";
+import { jalurPadanan, tautan } from "@/lib/bahasa";
 
 /**
  * Domain situs. Disimpan di env dan bukan ditanam di kode: saat domainnya
@@ -42,7 +43,32 @@ export const absoluteUrl = (path = "/") =>
  * sebagai satu halaman oleh Google, bukan dua yang saling melemahkan.
  * Wajib ada begitu traffic iklan mulai jalan.
  */
-export const canonical = (path: string) => ({ alternates: { canonical: path } });
+export const canonical = (path: string) => ({
+  alternates: {
+    canonical: path,
+    /* hreflang menyertai setiap canonical, bukan hanya di layout akar:
+       metadata halaman menimpa `alternates` secara utuh, jadi canonical yang
+       diberikan sendirian akan MENGHAPUS hreflang yang diwarisi. Halaman
+       terjemahan yang kehilangan penandanya terbaca sebagai duplikat. */
+    languages: petaBahasa(path),
+  },
+});
+
+/**
+ * Peta hreflang untuk satu jalur, dalam kedua bahasa.
+ *
+ * Menerima jalur dalam bentuk apa pun — Indonesia (/layanan) maupun Inggris
+ * (/en/services) — lalu memulihkannya ke bentuk Indonesia sebelum memetakan
+ * keduanya. Dengan begitu pemanggil tidak perlu tahu sedang di cabang mana.
+ */
+function petaBahasa(path: string): Record<string, string> {
+  const dasar = jalurPadanan(path, "id");
+  return {
+    "id-ID": tautan("id", dasar),
+    en: tautan("en", dasar),
+    "x-default": tautan("id", dasar),
+  };
+}
 
 /**
  * Alamat resmi untuk penanda: kantor pusat, dari daftar statis di lib/site.ts.

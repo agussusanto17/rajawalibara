@@ -10,7 +10,14 @@ import {
   siteUrl,
   websiteSchema,
 } from "@/lib/seo";
+import { headers } from "next/headers";
 import { JsonLd } from "@/components/site/json-ld";
+import {
+  bahasaDariJalur,
+  KODE_BAHASA,
+  OG_LOCALE,
+  type Bahasa,
+} from "@/lib/bahasa";
 
 /**
  * Tiga peran, tiga huruf.
@@ -45,11 +52,24 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+/** Bahasa halaman, dibaca dari jalur yang diteruskan middleware. */
+async function bahasaHalaman(): Promise<Bahasa> {
+  return bahasaDariJalur((await headers()).get("x-jalur") ?? "/");
+}
+
 export async function generateMetadata(): Promise<Metadata> {
-  const company = await profil();
+  const bahasa = await bahasaHalaman();
+  const company = await profil(bahasa);
   return {
   metadataBase: new URL(siteUrl),
-  alternates: { canonical: "/" },
+  /* hreflang untuk kedua bahasa plus x-default. Tanpa ini mesin telusur
+     memperlakukan /en sebagai halaman terpisah yang isinya menyerupai versi
+     Indonesia — dan yang dihukum sebagai duplikat justru halaman yang
+     sengaja diterjemahkan. */
+  alternates: {
+    canonical: "/",
+    languages: { "id-ID": "/", en: "/en", "x-default": "/" },
+  },
   title: {
     default: `${company.name} | ${company.tagline}`,
     template: `%s | ${company.name}`,
@@ -67,7 +87,7 @@ export async function generateMetadata(): Promise<Metadata> {
   openGraph: {
     type: "website",
     url: "/",
-    locale: "id_ID",
+    locale: OG_LOCALE[bahasa],
     siteName: company.legalName,
     title: `${company.name} | ${company.tagline}`,
     description: company.intro,
@@ -78,12 +98,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const bahasa = await bahasaHalaman();
   return (
     <html
-      lang="id"
+      lang={KODE_BAHASA[bahasa]}
       className={cn("h-full", display.variable, body.variable, mono.variable)}
     >
       <body className="flex min-h-full flex-col antialiased">

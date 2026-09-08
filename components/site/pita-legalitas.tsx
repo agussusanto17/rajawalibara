@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { bidangUsaha, daftarKantor, profil } from "@/lib/konten";
+import type { Bahasa } from "@/lib/bahasa";
 
 /**
  * Pita legalitas — bagian penanda situs ini.
@@ -20,11 +21,11 @@ import { bidangUsaha, daftarKantor, profil } from "@/lib/konten";
  * Barisnya dirender hanya bila datanya ada. Kolom kosong berlabel "—" di pita
  * yang isinya soal legalitas terbaca sebagai dokumen yang tidak lengkap.
  */
-export async function PitaLegalitas() {
+export async function PitaLegalitas({ bahasa }: { bahasa: Bahasa }) {
   const [company, kantor, kbli] = await Promise.all([
-    profil(),
-    daftarKantor(),
-    bidangUsaha(),
+    profil(bahasa),
+    daftarKantor(bahasa),
+    bidangUsaha(bahasa),
   ]);
 
   /** "KBLI 46710 — Perdagangan Besar…" → "46710". Kalau polanya tidak cocok,

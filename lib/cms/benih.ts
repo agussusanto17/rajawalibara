@@ -21,6 +21,20 @@ import {
   testimoniContoh,
   values,
 } from "@/lib/site";
+import * as en from "@/lib/site.en";
+
+/**
+ * Padanan bahasa Inggris untuk satu orang, dicocokkan lewat nama.
+ *
+ * Bukan lewat urutan larik: pimpinan dan tim adalah dua daftar yang digabung
+ * sebelum ditanam, dan indeks gabungannya tidak lagi sejajar dengan indeks
+ * di masing-masing daftar Inggris. Nama orang tidak diterjemahkan, jadi ia
+ * kunci yang stabil di kedua bahasa.
+ */
+const ORANG_EN = new Map(
+  [...en.leadership, ...en.team].map((o) => [o.name, o] as const),
+);
+const padananOrang = (nama: string) => ORANG_EN.get(nama);
 import { db } from "@/lib/db";
 import { keSlug } from "@/lib/cms/skema";
 
@@ -61,6 +75,201 @@ export type LaporanBenih = {
   catatan: string[];
 };
 
+
+/**
+ * Mengisi kolom terjemahan yang masih kosong pada baris yang sudah ada.
+ *
+ * Penanaman di atas melewati baris yang sudah ada — itu yang membuatnya aman
+ * dijalankan berulang. Tetapi situs yang sudah tayang lebih dulu punya
+ * seluruh barisnya sebelum kolom `*_en` ada, dan melewatinya berarti versi
+ * Inggris tetap kosong selamanya sementara tombolnya melaporkan "sudah".
+ *
+ * Yang diisi HANYA kolom yang masih NULL. Terjemahan yang sudah disunting
+ * lewat CMS tidak pernah ditimpa: menekan tombol data bawaan tidak boleh
+ * menghapus pekerjaan orang.
+ */
+async function lengkapiTerjemahan(
+  p: ReturnType<typeof db>,
+): Promise<number> {
+  let terisi = 0;
+
+  /** Menyusun data update hanya dari kolom yang kosong di baris itu. */
+  const kosong = (
+    baris: Record<string, unknown>,
+    isian: Record<string, unknown>,
+  ) =>
+    Object.fromEntries(
+      Object.entries(isian).filter(
+        ([k, v]) => v != null && (baris[k] === null || baris[k] === undefined),
+      ),
+    );
+
+  const perusahaan = await p.perusahaan.findUnique({ where: { id: "tunggal" } });
+  if (perusahaan) {
+    const data = kosong(perusahaan, {
+      taglineEn: en.company.tagline,
+      introEn: en.company.intro,
+      visiEn: en.company.vision,
+      sejarahEn: en.company.history,
+      latarBelakangEn: en.company.background,
+    });
+    if (Object.keys(data).length) {
+      await p.perusahaan.update({ where: { id: "tunggal" }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  const brd = await p.beranda.findUnique({ where: { id: "tunggal" } });
+  if (brd) {
+    const data = kosong(brd, {
+      pitaTagEn: en.beranda.pitaTag,
+      pitaTeksEn: en.beranda.pitaTeks,
+      judulEn: en.beranda.judul,
+      introEn: en.beranda.intro,
+      ctaUtamaLabelEn: en.beranda.ctaUtamaLabel,
+      ctaUtamaLabelPendekEn: en.beranda.ctaUtamaLabelPendek,
+      ctaKeduaLabelEn: en.beranda.ctaKeduaLabel,
+      ctaKeduaLabelPendekEn: en.beranda.ctaKeduaLabelPendek,
+      manifestoEn: en.beranda.manifesto,
+    });
+    if (Object.keys(data).length) {
+      await p.beranda.update({ where: { id: "tunggal" }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  /* Dicocokkan lewat kunci alami — slug, nama, kutipan — bukan lewat urutan.
+     Urutan baris di basis data bisa sudah digeser lewat CMS, dan mencocokkan
+     dengan indeks larik akan memasangkan terjemahan ke baris yang salah. */
+  for (const x of en.products) {
+    const baris = await p.produk.findUnique({ where: { slug: x.slug } });
+    if (!baris) continue;
+    const data = kosong(baris, {
+      namaEn: x.name,
+      namaPanjangEn: x.full,
+      ringkasEn: x.summary,
+      deskripsiEn: x.description,
+      peruntukanEn: x.audience,
+      asalEn: x.asal,
+      spesifikasiEn: x.specs,
+      keunggulanEn: x.why,
+    });
+    if (Object.keys(data).length) {
+      await p.produk.update({ where: { slug: x.slug }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+
+  /* Blok konten: dicocokkan lewat judul bahasa Indonesia, yang juga kunci
+     penjaga saat menanam. */
+  const blokPasangan: [string, string, string | null][] = [
+    ...values.map((v, i) => [v.title, en.values[i]?.title ?? "", en.values[i]?.body ?? null] as [string, string, string | null]),
+    ...misi.map((m, i) => [m, en.misi[i] ?? "", null] as [string, string, string | null]),
+    ...alasanKami.map((v, i) => [v.title, en.alasanKami[i]?.title ?? "", en.alasanKami[i]?.body ?? null] as [string, string, string | null]),
+    ...langkahMulai.map((v, i) => [v.title, en.langkahMulai[i]?.title ?? "", en.langkahMulai[i]?.body ?? null] as [string, string, string | null]),
+    ...faqUmum.map((v, i) => [v.q, en.faqUmum[i]?.q ?? "", en.faqUmum[i]?.a ?? null] as [string, string, string | null]),
+  ];
+  for (const [judulId, judulEn, isiEn] of blokPasangan) {
+    if (!judulEn) continue;
+    const baris = await p.blokKonten.findFirst({ where: { judul: judulId } });
+    if (!baris) continue;
+    const data = kosong(baris, { judulEn, isiEn });
+    if (Object.keys(data).length) {
+      await p.blokKonten.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  for (const [i, g] of serviceGroups.entries()) {
+    const baris = await p.grupLayanan.findFirst({ where: { judul: g.title } });
+    if (!baris || !en.serviceGroups[i]) continue;
+    const data = kosong(baris, {
+      judulEn: en.serviceGroups[i].title,
+      isiEn: en.serviceGroups[i].body,
+      cakupanEn: [...en.serviceGroups[i].covers],
+    });
+    if (Object.keys(data).length) {
+      await p.grupLayanan.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  for (const [i, nama] of services.entries()) {
+    const baris = await p.layanan.findUnique({ where: { nama } });
+    if (!baris || !en.services[i]) continue;
+    const data = kosong(baris, { namaEn: en.services[i] });
+    if (Object.keys(data).length) {
+      await p.layanan.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  for (const [i, k] of kantor.entries()) {
+    const baris = await p.kantor.findFirst({ where: { nama: k.nama } });
+    if (!baris || !en.kantor[i]) continue;
+    const data = kosong(baris, {
+      namaEn: en.kantor[i].nama,
+      alamatEn: en.kantor[i].alamat,
+      alamatSingkatEn: en.kantor[i].alamatSingkat,
+    });
+    if (Object.keys(data).length) {
+      await p.kantor.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  for (const [i, m] of klienAwal.entries()) {
+    const baris = await p.mitra.findFirst({ where: { nama: m.nama } });
+    if (!baris || !en.klienAwal[i]) continue;
+    const data = kosong(baris, { sektorEn: en.klienAwal[i].sektor });
+    if (Object.keys(data).length) {
+      await p.mitra.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  for (const o of [...en.leadership, ...en.team]) {
+    const baris = await p.anggotaTim.findFirst({ where: { nama: o.name } });
+    if (!baris) continue;
+    const data = kosong(baris, { jabatanEn: o.role, bioEn: o.bio ?? null });
+    if (Object.keys(data).length) {
+      await p.anggotaTim.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  for (const [i, t] of perjalanan.entries()) {
+    const baris = await p.perjalanan.findFirst({
+      where: { tahun: t.tahun, judul: t.judul },
+    });
+    if (!baris || !en.perjalanan[i]) continue;
+    const data = kosong(baris, {
+      judulEn: en.perjalanan[i].judul,
+      isiEn: en.perjalanan[i].body,
+    });
+    if (Object.keys(data).length) {
+      await p.perjalanan.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  for (const [i, t] of testimoniContoh.entries()) {
+    const baris = await p.testimoni.findFirst({ where: { kutipan: t.kutipan } });
+    if (!baris || !en.testimoniContoh[i]) continue;
+    const data = kosong(baris, {
+      kutipanEn: en.testimoniContoh[i].kutipan,
+      peranEn: en.testimoniContoh[i].peran,
+    });
+    if (Object.keys(data).length) {
+      await p.testimoni.update({ where: { id: baris.id }, data });
+      terisi += Object.keys(data).length;
+    }
+  }
+
+  return terisi;
+}
+
 export async function tanamBenih(): Promise<LaporanBenih> {
   const p = db();
   const catatan: string[] = [];
@@ -90,6 +299,11 @@ export async function tanamBenih(): Promise<LaporanBenih> {
         visi: company.vision,
         sejarah: company.history,
         latarBelakang: company.background,
+        taglineEn: en.company.tagline,
+        introEn: en.company.intro,
+        visiEn: en.company.vision,
+        sejarahEn: en.company.history,
+        latarBelakangEn: en.company.background,
       },
     });
     laporan.perusahaan = true;
@@ -103,7 +317,7 @@ export async function tanamBenih(): Promise<LaporanBenih> {
   }
 
   /* -------------------------------------------------------------- Kantor */
-  for (const k of kantor) {
+  for (const [i, k] of kantor.entries()) {
     if (await p.kantor.findFirst({ where: { nama: k.nama } })) continue;
     await p.kantor.create({
       data: {
@@ -115,6 +329,9 @@ export async function tanamBenih(): Promise<LaporanBenih> {
         email: k.email,
         mapsCid: k.mapsCid,
         urutan: k.urutan,
+        namaEn: en.kantor[i]?.nama ?? null,
+        alamatEn: en.kantor[i]?.alamat ?? null,
+        alamatSingkatEn: en.kantor[i]?.alamatSingkat ?? null,
       },
     });
     laporan.kantor++;
@@ -229,6 +446,14 @@ export async function tanamBenih(): Promise<LaporanBenih> {
         status: "DRAF",
         spesifikasi: x.specs,
         keunggulan: x.why,
+        namaEn: en.products[i]?.name ?? null,
+        namaPanjangEn: en.products[i]?.full ?? null,
+        ringkasEn: en.products[i]?.summary ?? null,
+        deskripsiEn: en.products[i]?.description ?? null,
+        peruntukanEn: en.products[i]?.audience ?? null,
+        asalEn: en.products[i]?.asal ?? null,
+        spesifikasiEn: en.products[i]?.specs ?? undefined,
+        keunggulanEn: en.products[i]?.why ?? undefined,
         galeri: x.gallery ?? [],
         langkah: x.steps ?? [],
         sampulId: x.cover ? (media.get(x.cover) ?? null) : null,
@@ -251,6 +476,8 @@ export async function tanamBenih(): Promise<LaporanBenih> {
         jabatan: o.role,
         kelompok: o.kelompok,
         bio: o.bio ?? null,
+        jabatanEn: padananOrang(o.name)?.role ?? null,
+        bioEn: padananOrang(o.name)?.bio ?? null,
         urutan: i,
         fotoId: o.photo ? (media.get(o.photo) ?? null) : null,
       },
@@ -263,7 +490,14 @@ export async function tanamBenih(): Promise<LaporanBenih> {
   // diunggah sebagai berkas; sambungkan lewat /admin/mitra setelah diunggah.
   for (const [i, m] of klienAwal.entries()) {
     if (await p.mitra.findFirst({ where: { nama: m.nama } })) continue;
-    await p.mitra.create({ data: { nama: m.nama, sektor: m.sektor, urutan: i } });
+    await p.mitra.create({
+      data: {
+        nama: m.nama,
+        sektor: m.sektor,
+        sektorEn: en.klienAwal[i]?.sektor ?? null,
+        urutan: i,
+      },
+    });
     laporan.mitra++;
   }
 
@@ -275,7 +509,12 @@ export async function tanamBenih(): Promise<LaporanBenih> {
     if (!fotoId) continue;
     if (await p.slide.findFirst({ where: { fotoId } })) continue;
     await p.slide.create({
-      data: { fotoId, keterangan: f.keterangan, urutan: i },
+      data: {
+        fotoId,
+        keterangan: f.keterangan,
+        keteranganEn: en.fotoHero[i]?.keterangan ?? null,
+        urutan: i,
+      },
     });
     laporan.slide++;
   }
@@ -312,6 +551,15 @@ export async function tanamBenih(): Promise<LaporanBenih> {
         ctaKeduaLabelPendek: beranda.ctaKeduaLabelPendek,
         ctaKeduaHref: beranda.ctaKeduaHref,
         manifesto: beranda.manifesto,
+        pitaTagEn: en.beranda.pitaTag,
+        pitaTeksEn: en.beranda.pitaTeks,
+        judulEn: en.beranda.judul,
+        introEn: en.beranda.intro,
+        ctaUtamaLabelEn: en.beranda.ctaUtamaLabel,
+        ctaUtamaLabelPendekEn: en.beranda.ctaUtamaLabelPendek,
+        ctaKeduaLabelEn: en.beranda.ctaKeduaLabel,
+        ctaKeduaLabelPendekEn: en.beranda.ctaKeduaLabelPendek,
+        manifestoEn: en.beranda.manifesto,
         fotoSatuId: media.get(beranda.fotoSatu) ?? null,
         fotoDuaId: media.get(beranda.fotoDua) ?? null,
       },
@@ -325,7 +573,14 @@ export async function tanamBenih(): Promise<LaporanBenih> {
   // jenis yang berbeda.
   const tanamBlok = async (
     jenis: "NILAI" | "MISI" | "ALASAN" | "LANGKAH" | "FAQ",
-    butir: { ikon?: string; judul: string; isi: string }[],
+    butir: {
+      ikon?: string;
+      judul: string;
+      isi: string;
+      /** Padanan Inggris. Kosong berarti belum diterjemahkan. */
+      judulEn?: string;
+      isiEn?: string;
+    }[],
   ) => {
     for (const [i, b] of butir.entries()) {
       const ada = await p.blokKonten.findFirst({
@@ -333,19 +588,64 @@ export async function tanamBenih(): Promise<LaporanBenih> {
       });
       if (ada) continue;
       await p.blokKonten.create({
-        data: { jenis, ikon: b.ikon ?? null, judul: b.judul, isi: b.isi, urutan: i },
+        data: {
+          jenis,
+          ikon: b.ikon ?? null,
+          judul: b.judul,
+          isi: b.isi,
+          judulEn: b.judulEn ?? null,
+          isiEn: b.isiEn ?? null,
+          urutan: i,
+        },
       });
       laporan.blok++;
     }
   };
 
-  await tanamBlok("NILAI", values.map((v) => ({ ikon: v.icon, judul: v.title, isi: v.body })));
+  await tanamBlok(
+    "NILAI",
+    values.map((v, i) => ({
+      ikon: v.icon,
+      judul: v.title,
+      isi: v.body,
+      judulEn: en.values[i]?.title,
+      isiEn: en.values[i]?.body,
+    })),
+  );
   // Misi hanya punya kalimatnya sendiri: `isi` dikosongkan, bukan diisi
   // penjelasan karangan yang tidak ada di company profile.
-  await tanamBlok("MISI", misi.map((m) => ({ judul: m, isi: "" })));
-  await tanamBlok("ALASAN", alasanKami.map((v) => ({ ikon: v.icon, judul: v.title, isi: v.body })));
-  await tanamBlok("LANGKAH", langkahMulai.map((v) => ({ judul: v.title, isi: v.body })));
-  await tanamBlok("FAQ", faqUmum.map((v) => ({ judul: v.q, isi: v.a })));
+  await tanamBlok(
+    "MISI",
+    misi.map((m, i) => ({ judul: m, isi: "", judulEn: en.misi[i] })),
+  );
+  await tanamBlok(
+    "ALASAN",
+    alasanKami.map((v, i) => ({
+      ikon: v.icon,
+      judul: v.title,
+      isi: v.body,
+      judulEn: en.alasanKami[i]?.title,
+      isiEn: en.alasanKami[i]?.body,
+    })),
+  );
+  await tanamBlok(
+    "LANGKAH",
+    langkahMulai.map((v, i) => ({
+      judul: v.title,
+      isi: v.body,
+      judulEn: en.langkahMulai[i]?.title,
+      isiEn: en.langkahMulai[i]?.body,
+    })),
+  );
+  await tanamBlok(
+    "FAQ",
+    faqUmum.map((v, i) => ({
+      judul: v.q,
+      isi: v.a,
+      judulEn: en.faqUmum[i]?.q,
+      isiEn: en.faqUmum[i]?.a,
+    })),
+  );
 
   /* ----------------------------------------------------------- Perjalanan */
   for (const [i, t] of perjalanan.entries()) {
@@ -354,7 +654,14 @@ export async function tanamBenih(): Promise<LaporanBenih> {
     });
     if (ada) continue;
     await p.perjalanan.create({
-      data: { tahun: t.tahun, judul: t.judul, isi: t.body, urutan: i },
+      data: {
+        tahun: t.tahun,
+        judul: t.judul,
+        isi: t.body,
+        judulEn: en.perjalanan[i]?.judul ?? null,
+        isiEn: en.perjalanan[i]?.body ?? null,
+        urutan: i,
+      },
     });
     laporan.perjalanan++;
   }
@@ -375,6 +682,8 @@ export async function tanamBenih(): Promise<LaporanBenih> {
         nama: t.nama,
         peran: t.peran,
         organisasi: t.organisasi,
+        kutipanEn: en.testimoniContoh[i]?.kutipan ?? null,
+        peranEn: en.testimoniContoh[i]?.peran ?? null,
         contoh: false,
         urutan: i,
       },
@@ -385,7 +694,9 @@ export async function tanamBenih(): Promise<LaporanBenih> {
   /* -------------------------------------------------------------- Layanan */
   for (const [i, nama] of services.entries()) {
     if (await p.layanan.findUnique({ where: { nama } })) continue;
-    await p.layanan.create({ data: { nama, urutan: i } });
+    await p.layanan.create({
+      data: { nama, namaEn: en.services[i] ?? null, urutan: i },
+    });
     laporan.layanan++;
   }
 
@@ -398,6 +709,9 @@ export async function tanamBenih(): Promise<LaporanBenih> {
         judul: g.title,
         isi: g.body,
         cakupan: [...g.covers],
+        judulEn: en.serviceGroups[i]?.title ?? null,
+        isiEn: en.serviceGroups[i]?.body ?? null,
+        cakupanEn: en.serviceGroups[i] ? [...en.serviceGroups[i].covers] : undefined,
         urutan: i,
       },
     });
@@ -428,6 +742,13 @@ export async function tanamBenih(): Promise<LaporanBenih> {
   catatan.push(
     "Seluruh foto masih stok Unsplash, termasuk tiga foto slider hero. Ganti lewat /admin/media dan /admin/pengaturan → Slider hero.",
   );
+
+  const terjemahan = await lengkapiTerjemahan(p);
+  if (terjemahan > 0) {
+    catatan.push(
+      `${terjemahan} kolom terjemahan bahasa Inggris diisi pada baris yang sudah ada. Yang sudah pernah disunting lewat CMS tidak ditimpa.`,
+    );
+  }
 
   return laporan;
 }

@@ -1,5 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { daftarKantor, profil } from "@/lib/konten";
+import type { Bahasa } from "@/lib/bahasa";
+import { teks } from "@/lib/teks";
 
 /**
  * Peta lokasi kantor, melebar penuh, dengan daftar seluruh kantor di bawahnya.
@@ -22,8 +24,12 @@ import { daftarKantor, profil } from "@/lib/konten";
  * lebih awal berarti menarik skrip pihak ketiga sebelum pengunjung sampai ke
  * sini.
  */
-export async function PetaKantor() {
-  const [company, kantor] = await Promise.all([profil(), daftarKantor()]);
+export async function PetaKantor({ bahasa }: { bahasa: Bahasa }) {
+  const t = teks(bahasa);
+  const [company, kantor] = await Promise.all([
+    profil(bahasa),
+    daftarKantor(bahasa),
+  ]);
   const pusat = kantor.find((k) => k.jenis === "PUSAT") ?? kantor[0];
 
   const semat = pusat.mapsCid
@@ -71,7 +77,7 @@ export async function PetaKantor() {
               rel="noopener noreferrer"
               className="inline-flex w-fit items-center gap-2 rounded-lg border border-line-strong px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-brand/50 hover:bg-white/[0.06]"
             >
-              Buka petunjuk arah
+              {t.umum.bukaPetunjukArah}
               <ArrowUpRight className="size-4" aria-hidden="true" />
             </a>
           </div>

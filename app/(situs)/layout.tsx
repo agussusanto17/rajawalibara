@@ -1,7 +1,5 @@
 import { GoogleTagManager } from "@next/third-parties/google";
 import { isLive } from "@/lib/seo";
-import { SiteHeader } from "@/components/site/site-header";
-import { SiteFooter } from "@/components/site/site-footer";
 
 /**
  * Container Google Tag Manager. Tag GA4 dan Meta Pixel dijalankan dari dalam
@@ -45,17 +43,10 @@ export default async function SitusLayout({
           berselisih. */}
       {isLive && <GoogleTagManager gtmId={GTM} />}
 
-      <a
-        href="#konten"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
-      >
-        Lewati ke konten utama
-      </a>
-      <SiteHeader />
-      <main id="konten" className="flex-1">
-        {children}
-      </main>
-      <SiteFooter />
+      {/* Header, footer, dan lompatan aksesibilitas tinggal di layout bahasa
+          satu tingkat di bawah ini — ketiganya perlu tahu bahasa halaman,
+          sementara layout ini membungkus kedua bahasa sekaligus. */}
+      {children}
     </>
   );
 }
