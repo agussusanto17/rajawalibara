@@ -30,7 +30,7 @@ export function LogoMitra({
       <img
         src={src}
         alt={nama}
-        className="h-16 w-auto opacity-45 grayscale transition-[opacity,filter] duration-300 group-hover:opacity-100 group-hover:grayscale-0 sm:h-20"
+        className="h-16 w-auto max-w-[200px] object-contain opacity-45 grayscale transition-[opacity,filter] duration-300 group-hover:opacity-100 group-hover:grayscale-0 sm:h-20 sm:max-w-[260px]"
       />
       <span
         className={`pointer-events-none absolute left-1/2 top-full z-10 mt-3 -translate-x-1/2 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${tip}`}
