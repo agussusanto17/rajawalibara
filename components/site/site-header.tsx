@@ -100,7 +100,7 @@ export function SiteHeader({ bahasa }: { bahasa: Bahasa }) {
               aria-label={t.header.logoKeBeranda}
               className="-my-2 shrink-0 py-2"
             >
-              <Logo varian="baris" compact alt="" />
+              <Logo compact alt="" />
             </Link>
 
             <nav
