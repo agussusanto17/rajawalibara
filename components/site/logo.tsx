@@ -1,59 +1,54 @@
 import { cn } from "@/lib/utils";
 
-/**
- * Dua lockup dari marka yang sama.
- *
- * `utama` — emblem elang bertumpuk di atas wordmark. Ini marka utamanya, dan
- * dipakai di mana pun ada ruang vertikal: footer, halaman masuk CMS, gambar
- * bagikan, dan penanda Organization.
- *
- * `baris` — emblem dan wordmark berdampingan, untuk bilah sempit.
- *
- * Pemisahan ini bukan selera, melainkan geometri yang diukur. Pada lockup
- * bertumpuk, wordmark menempati 26% bagian bawah. Di header setinggi 36px
- * itu menyisakan 9px untuk tiga baris teks — "RAJAWALI", "BARA YUDHA
- * PERKASA", dan "TRADING MINERAL & BATUBARA" — yang jatuh jadi noda, bukan
- * tulisan. Baru terbaca mulai 64px dan utuh di 96px, dan header setinggi itu
- * memaksa seluruh halaman turun.
- *
- * Lockup berbaris terbaca jelas di 36px karena wordmark-nya duduk di samping
- * emblem, bukan di bawahnya. Itu sebabnya header memakainya.
- */
-const LOCKUP = {
-  utama: { src: "/logo/logo-square.webp", lebar: 393, tinggi: 400 },
-  baris: { src: "/logo/logo-rajawalibara.webp", lebar: 900, tinggi: 249 },
-} as const;
+const MARKA = {
+  src: "/logo/logo-square.webp",
+  lebar: 393,
+  tinggi: 400,
+};
 
-/** Tinggi render per lockup. */
+/**
+ * Dua ukuran, dan angkanya hasil ukur bukan selera.
+ *
+ * Pada marka ini wordmark menempati 26% bagian bawah, jadi tinggi render yang
+ * menentukan apakah ia terbaca:
+ *
+ *   96px  seluruh wordmark terbaca, termasuk baris "TRADING MINERAL &
+ *         BATUBARA" — dipakai footer, sidebar CMS, dan halaman masuk;
+ *   48px  dua baris atas masih terbaca, baris ketiga jadi ornamen —
+ *         dipakai header situs;
+ *   36px  seluruh wordmark jadi noda. Jangan turun ke sini.
+ *
+ * Header memakai ukuran ringkas karena pilnya melayang di atas hero:
+ * memperbesarnya menaikkan tinggi pil dan mendorong seluruh halaman turun.
+ */
 const TINGGI = {
-  utama: { biasa: "h-20 sm:h-24", ringkas: "h-14 sm:h-16" },
-  baris: { biasa: "h-14 sm:h-16", ringkas: "h-9 sm:h-10" },
+  biasa: "h-20 sm:h-24",
+  ringkas: "h-11 sm:h-12",
 } as const;
 
 export function Logo({
   className,
-  varian = "utama",
   compact = false,
   alt = "PT Rajawali Bara Yudha Perkasa",
 }: {
   className?: string;
-  varian?: keyof typeof LOCKUP;
   compact?: boolean;
   /** Kosongkan kalau elemen pembungkusnya sudah punya label sendiri. */
   alt?: string;
 }) {
-  const l = LOCKUP[varian];
-  const tinggi = TINGGI[varian][compact ? "ringkas" : "biasa"];
-
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={l.src}
-      width={l.lebar}
-      height={l.tinggi}
+      src={MARKA.src}
+      width={MARKA.lebar}
+      height={MARKA.tinggi}
       alt={alt}
       draggable={false}
-      className={cn("w-auto shrink-0", tinggi, className)}
+      className={cn(
+        "w-auto shrink-0",
+        TINGGI[compact ? "ringkas" : "biasa"],
+        className,
+      )}
     />
   );
 }
