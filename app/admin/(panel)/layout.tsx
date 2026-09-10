@@ -40,7 +40,7 @@ export default async function PanelLayout({
       <aside className="border-b border-line bg-surface lg:sticky lg:top-0 lg:h-dvh lg:border-b-0 lg:border-r">
         <div className="flex h-full flex-col gap-6 p-5">
           <Link href="/admin" className="shrink-0">
-            <Logo compact alt="Rajawali Bara, ringkasan CMS" />
+            <Logo varian="baris" compact alt="Rajawali Bara, ringkasan CMS" />
           </Link>
 
           <NavAdmin menu={MENU} />

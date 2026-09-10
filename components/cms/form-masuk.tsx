@@ -65,7 +65,7 @@ export function FormMasuk() {
           autoComplete="username"
           required
           className={ISIAN}
-          placeholder="nama@rajawalibara.co.id"
+          placeholder="nama@rajawalibara.com"
         />
       </div>
 

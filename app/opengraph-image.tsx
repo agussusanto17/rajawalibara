@@ -38,7 +38,7 @@ export default async function Image() {
   const produk = await produkTerbit("id");
 
   const [logo, semiBold, regular] = await Promise.all([
-    readFile(join(process.cwd(), "public/logo/logo-og.png")),
+    readFile(join(process.cwd(), "public/logo/logo-square-og.png")),
     readFile(join(process.cwd(), "assets/font/Inter-SemiBold.ttf")),
     readFile(join(process.cwd(), "assets/font/Inter-Regular.ttf")),
   ]);
@@ -74,7 +74,11 @@ export default async function Image() {
           }}
         />
 
-        <img src={logoSrc} height={112} alt="" style={{ objectFit: "contain" }} />
+        {/* 168px, bukan 112 seperti lockup berbaris sebelumnya. Pada marka
+            bertumpuk, wordmark menempati 26% bagian bawah — di 112px itu
+            menyisakan 29px untuk tiga baris teks, dan pratinjau bagikan
+            justru ditampilkan mengecil lagi oleh aplikasi pesan. */}
+        <img src={logoSrc} height={168} alt="" style={{ objectFit: "contain" }} />
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div

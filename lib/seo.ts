@@ -5,7 +5,7 @@ import { jalurPadanan, tautan } from "@/lib/bahasa";
  * Domain situs. Disimpan di env dan bukan ditanam di kode: saat domainnya
  * siap atau berganti, cukup ubah satu nilai di hPanel.
  *
- *   NEXT_PUBLIC_SITE_URL   https://rajawalibara.co.id
+ *   NEXT_PUBLIC_SITE_URL   https://rajawalibara.com
  *   NEXT_PUBLIC_SITE_LIVE  "true" hanya di produksi
  */
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -112,7 +112,7 @@ export const organizationSchema = {
    */
   logo: {
     "@type": "ImageObject",
-    url: absoluteUrl("/logo/logo-rajawalibara.png"),
+    url: absoluteUrl("/logo/logo-square.png"),
     width: 1200,
     height: 332,
   },
