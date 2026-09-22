@@ -29,7 +29,7 @@ export const company = {
   phone: "081347242614",
   phoneHref: "tel:+6281347242614",
   whatsappHref: "https://wa.me/6281347242614",
-  email: "ptrajawalibyp@gmail.com",
+  email: "marketing@rajawalibara.com",
   vision:
     "Menjadi perusahaan perdagangan batubara terkemuka dan terpercaya di Indonesia, yang berkontribusi dalam pemenuhan energi nasional dan internasional secara berkelanjutan.",
   history:

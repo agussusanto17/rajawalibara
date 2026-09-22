@@ -44,7 +44,7 @@ export const company: Teks<typeof id.company> = {
   phone: "081347242614",
   phoneHref: "tel:+6281347242614",
   whatsappHref: "https://wa.me/6281347242614",
-  email: "ptrajawalibyp@gmail.com",
+  email: "marketing@rajawalibara.com",
   vision:
     "To become a leading and trusted coal trading company in Indonesia, contributing to national and international energy supply on a sustainable basis.",
   history:

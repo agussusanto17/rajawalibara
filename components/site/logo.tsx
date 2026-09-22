@@ -1,22 +1,29 @@
 import { cn } from "@/lib/utils";
 
+/**
+ * Marka Rajawali Bara, versi tinta terang.
+ *
+ * Seluruh permukaan yang memakai komponen ini berlatar gelap — header,
+ * footer, sidebar dan halaman masuk CMS — jadi yang dimuat versi tinta terang.
+ * Versi tinta gelap (`/logo/logo-latar-terang.png`) hanya dipakai penanda
+ * Organization, yang ditampilkan mesin telusur di atas latar putih.
+ */
 const MARKA = {
-  src: "/logo/logo-square.webp",
-  lebar: 393,
+  src: "/logo/logo.webp",
+  lebar: 328,
   tinggi: 400,
 };
 
 /**
  * Dua ukuran, dan angkanya hasil ukur bukan selera.
  *
- * Pada marka ini wordmark menempati 26% bagian bawah, jadi tinggi render yang
- * menentukan apakah ia terbaca:
+ * Wordmark menempati 25% bagian bawah marka; baris "RAJAWALI BARA" sendiri
+ * 12% dari tingginya. Hurufnya tebal dan padat, jadi bertahan dikecilkan jauh
+ * lebih baik daripada marka sebelumnya yang bergradien emas tipis:
  *
- *   96px  seluruh wordmark terbaca, termasuk baris "TRADING MINERAL &
- *         BATUBARA" — dipakai footer, sidebar CMS, dan halaman masuk;
- *   48px  dua baris atas masih terbaca, baris ketiga jadi ornamen —
- *         dipakai header situs;
- *   36px  seluruh wordmark jadi noda. Jangan turun ke sini.
+ *   96px  seluruh wordmark terbaca — footer, sidebar CMS, halaman masuk;
+ *   48px  "RAJAWALI BARA" jelas, "YUDHA PERKASA" kecil tapi ada — header;
+ *   40px  masih terbaca, tapi sudah di tepinya. Jangan turun di bawah ini.
  *
  * Header memakai ukuran ringkas karena pilnya melayang di atas hero:
  * memperbesarnya menaikkan tinggi pil dan mendorong seluruh halaman turun.

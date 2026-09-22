@@ -112,7 +112,7 @@ export const organizationSchema = {
    */
   logo: {
     "@type": "ImageObject",
-    url: absoluteUrl("/logo/logo-square.png"),
+    url: absoluteUrl("/logo/logo-latar-terang.png"),
     width: 1200,
     height: 332,
   },
