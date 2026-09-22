@@ -60,6 +60,10 @@ const ID = {
   },
 
   /* ------------------------------------------------------------- Beranda */
+  hero: {
+    eyebrow: "Perdagangan batubara · sejak {tahun}",
+  },
+
   angka: {
     judulBaris1: "Dipercaya, lalu",
     judulBaris2: "dipertahankan",
@@ -84,7 +88,7 @@ const ID = {
   },
 
   layananRingkas: {
-    eyebrow: "KBLI 46710",
+    eyebrow: "{jumlah} lini layanan",
     judulBaris1: "Layanan",
     judulBaris2: "yang kami jalankan",
     keterangan: "Dari pemilihan tambang sampai kargo diterima di lokasi Anda.",
@@ -150,15 +154,11 @@ const ID = {
 
   /* -------------------------------------------------------------- Layanan */
   layanan: {
-    heroEyebrow: "KBLI 46710 · 46610",
+    heroEyebrow: "Domestik & ekspor",
     heroIsi:
       "Batubara dari sumber tambang terseleksi, diantar sampai titik serah yang Anda tentukan — dengan spesifikasi dan dokumen yang bisa diperiksa.",
     fotoBelum: "Foto belum diunggah",
     alurLangkah: "{jumlah} langkah",
-    bidangUsahaBaris1: "Bidang usaha",
-    bidangUsahaBaris2: "resmi",
-    lampiranIsi:
-      "Teks apa adanya dari lampiran NIB {nib}. Perizinan berusaha hanya berlaku untuk kode dan ruang lingkup yang tercantum di sana.",
     faqEyebrow: "Pertanyaan umum",
     spesifikasiJudulBaris1: "Spesifikasi",
     spesifikasiJudulBaris2: "yang kami pasok",
@@ -172,7 +172,6 @@ const ID = {
     alurJudulBaris1: "Dari permintaan",
     alurJudulBaris2: "sampai serah terima",
     alurEyebrow: "5 langkah",
-    legalitasJudul: "Lampiran NIB",
     faqJudulBaris1: "Yang sering",
     faqJudulBaris2: "ditanyakan",
     ctaJudul: "Sebutkan spesifikasi yang Anda cari",
@@ -294,6 +293,10 @@ const EN: BentukTeks = {
     hakCipta: "All rights reserved.",
   },
 
+  hero: {
+    eyebrow: "Coal trading · since {tahun}",
+  },
+
   angka: {
     judulBaris1: "Trusted, then",
     judulBaris2: "kept",
@@ -318,7 +321,7 @@ const EN: BentukTeks = {
   },
 
   layananRingkas: {
-    eyebrow: "KBLI 46710",
+    eyebrow: "{jumlah} service lines",
     judulBaris1: "What we",
     judulBaris2: "actually do",
     keterangan: "From mine selection through to cargo received at your site.",
@@ -382,15 +385,11 @@ const EN: BentukTeks = {
   },
 
   layanan: {
-    heroEyebrow: "KBLI 46710 · 46610",
+    heroEyebrow: "Domestic & export",
     heroIsi:
       "Coal from screened mine sources, delivered to the point you nominate — with specifications and documents that stand up to checking.",
     fotoBelum: "Photo not uploaded yet",
     alurLangkah: "{jumlah} steps",
-    bidangUsahaBaris1: "Licensed business",
-    bidangUsahaBaris2: "activities",
-    lampiranIsi:
-      "Reproduced verbatim from the attachment to NIB {nib}. The business licence covers only the codes and scope listed there.",
     faqEyebrow: "Common questions",
     spesifikasiJudulBaris1: "The grades",
     spesifikasiJudulBaris2: "we supply",
@@ -404,7 +403,6 @@ const EN: BentukTeks = {
     alurJudulBaris1: "From enquiry",
     alurJudulBaris2: "to handover",
     alurEyebrow: "5 steps",
-    legalitasJudul: "NIB attachment",
     faqJudulBaris1: "Frequently",
     faqJudulBaris2: "asked",
     ctaJudul: "Tell us the specification you are after",

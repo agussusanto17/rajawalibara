@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { isiBeranda, kantorPusat, profil, slideHero } from "@/lib/konten";
 import { tautan, type Bahasa } from "@/lib/bahasa";
+import { isi as isiPola, teks } from "@/lib/teks";
 import { Sorotan } from "@/components/site/sorotan";
 import { ButtonLink } from "@/components/site/button-link";
 import { HeroSlider } from "@/components/site/hero-slider";
@@ -39,7 +40,7 @@ export async function Hero({ bahasa }: { bahasa: Bahasa }) {
 
       <div className="shell relative z-[5] pb-28 pt-36 sm:pb-32 sm:pt-48">
         <p className="rise eyebrow" style={step(0)}>
-          NIB 1294000602642
+          {isiPola(teks(bahasa).hero.eyebrow, { tahun: company.founded })}
         </p>
 
         <h1

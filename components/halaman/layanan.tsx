@@ -6,14 +6,7 @@ import { fotoLayanan as fotoLayananEn, nav as navEn } from "@/lib/site.en";
 import { nav } from "@/lib/site";
 import { isi as isiPola, teks } from "@/lib/teks";
 import { tautan, type Bahasa } from "@/lib/bahasa";
-import {
-  bidangUsaha,
-  faq,
-  kelompokLayanan,
-  langkah,
-  produkTerbit,
-  profil,
-} from "@/lib/konten";
+import { faq, kelompokLayanan, langkah, produkTerbit } from "@/lib/konten";
 import { PageHero } from "@/components/site/page-hero";
 import { TabelSpesifikasi } from "@/components/site/tabel-spesifikasi";
 import { Section } from "@/components/site/section";
@@ -41,13 +34,11 @@ export async function Layanan({ bahasa }: { bahasa: Bahasa }) {
   const t = teks(bahasa);
   const foto = bahasa === "en" ? fotoLayananEn : fotoLayanan;
   const menu = bahasa === "en" ? navEn : nav;
-  const [grup, kbli, tingkatan, alur, tanya, company] = await Promise.all([
+  const [grup, tingkatan, alur, tanya] = await Promise.all([
     kelompokLayanan(bahasa),
-    bidangUsaha(bahasa),
     produkTerbit(bahasa),
     langkah(bahasa),
     faq(bahasa),
-    profil(bahasa),
   ]);
 
   return (
@@ -243,43 +234,7 @@ export async function Layanan({ bahasa }: { bahasa: Bahasa }) {
         </Section>
       )}
 
-      {/* 4 ----------------------------------------------------- Bidang usaha */}
-      {kbli.length > 0 && (
-        <Section bordered className="bg-surface/30">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-16">
-            <div>
-              <p className="eyebrow">{t.layanan.legalitasJudul}</p>
-              <h2 className="mt-6 text-[2rem] uppercase leading-[1.08] text-white sm:text-[2.5rem]">
-                {t.layanan.bidangUsahaBaris1}
-                  <br />
-                  {t.layanan.bidangUsahaBaris2}
-              </h2>
-              <p className="mt-6 text-base leading-relaxed text-muted-fg">
-                {isiPola(t.layanan.lampiranIsi, { nib: company.nib })}
-              </p>
-            </div>
-
-            <ul className="divide-y divide-line border-y border-line">
-              {kbli.map((n) => {
-                const kode = n.match(/\b(\d{5})\b/)?.[1];
-                const judul = n.includes(" — ") ? n.split(" — ")[1] : n;
-                return (
-                  <li key={n} className="flex gap-6 py-5">
-                    <span className="angka shrink-0 text-base font-medium text-brand">
-                      {kode ?? "—"}
-                    </span>
-                    <span className="text-base leading-relaxed text-white/85">
-                      {judul}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </Section>
-      )}
-
-      {/* 5 ------------------------------------------------------------- FAQ */}
+      {/* 4 ------------------------------------------------------------- FAQ */}
       {tanya.length > 0 && (
         <Section bordered>
           <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:gap-16">

@@ -477,17 +477,6 @@ export async function tonggak(
   }
 }
 
-export async function bidangUsaha(bahasa: Bahasa): Promise<string[]> {
-  const cadangan = () => [...naskah(bahasa).services];
-  try {
-    const r = await db().layanan.findMany(urutBlok);
-    if (!r.length) return cadangan();
-    return r.map((l) => pilih(bahasa, l.nama, l.namaEn));
-  } catch {
-    return cadangan();
-  }
-}
-
 export async function kelompokLayanan(
   bahasa: Bahasa,
 ): Promise<{ title: string; body: string; icon: string; covers: string[] }[]> {

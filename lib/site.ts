@@ -86,7 +86,7 @@ export const beranda = {
   pitaTag: `Sejak ${company.founded}`,
   pitaTeks: "Perdagangan batubara domestik & ekspor",
   pitaTautan: "/tentang-kami",
-  judul: "Mitra energi Anda yang [[andal dan profesional]]",
+  judul: "Rajawali Bara [[Yudha Perkasa]]",
   intro: company.intro,
   ctaUtamaLabel: "Lihat Layanan Kami",
   ctaUtamaLabelPendek: "Layanan",
@@ -960,7 +960,7 @@ export const perjalanan = [
   {
     tahun: "2021",
     judul: "Perusahaan berdiri",
-    body: `${company.legalName} memperoleh NIB pada 24 Juni 2021 sebagai perusahaan perdagangan besar bahan bakar padat.`,
+    body: `${company.legalName} mulai beroperasi sebagai perusahaan perdagangan batubara.`,
   },
   {
     tahun: "2026",

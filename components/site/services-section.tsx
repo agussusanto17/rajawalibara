@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { fotoLayanan } from "@/lib/site";
 import { fotoLayanan as fotoLayananEn } from "@/lib/site.en";
 import { tautan, type Bahasa } from "@/lib/bahasa";
-import { teks } from "@/lib/teks";
+import { isi as isiPola, teks } from "@/lib/teks";
 import { kelompokLayanan } from "@/lib/konten";
 import { ButtonLink } from "@/components/site/button-link";
 import { Icon } from "@/components/site/icon-map";
@@ -31,7 +31,9 @@ export async function ServicesSection({ bahasa }: { bahasa: Bahasa }) {
     <Section id="layanan">
       <div className="grid gap-10 lg:grid-cols-[1fr_300px] lg:items-end lg:gap-16">
         <Reveal>
-          <p className="eyebrow">{t.layananRingkas.eyebrow}</p>
+          <p className="eyebrow">
+            {isiPola(t.layananRingkas.eyebrow, { jumlah: serviceGroups.length })}
+          </p>
           <h2 className="mt-6 text-[2.5rem] uppercase text-white sm:text-[3.5rem] lg:text-[4rem]">
             {t.layananRingkas.judulBaris1}
               <br />

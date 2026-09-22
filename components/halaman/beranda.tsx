@@ -1,5 +1,4 @@
 import { Hero } from "@/components/site/hero";
-import { PitaLegalitas } from "@/components/site/pita-legalitas";
 import { Manifesto } from "@/components/site/manifesto";
 import { ClientLogos } from "@/components/site/client-logos";
 import { ServicesSection } from "@/components/site/services-section";
@@ -25,8 +24,6 @@ export async function Beranda({ bahasa }: { bahasa: Bahasa }) {
   return (
     <>
       <Hero bahasa={bahasa} />
-
-      <PitaLegalitas bahasa={bahasa} />
 
       <Manifesto bahasa={bahasa} />
 

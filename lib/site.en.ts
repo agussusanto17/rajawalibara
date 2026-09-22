@@ -106,7 +106,7 @@ export const beranda: Teks<typeof id.beranda> = {
   pitaTag: `Since ${company.founded}`,
   pitaTeks: "Domestic & export coal trading",
   pitaTautan: "/tentang-kami",
-  judul: "Your [[reliable and professional]] energy partner",
+  judul: "Rajawali Bara [[Yudha Perkasa]]",
   intro: company.intro,
   ctaUtamaLabel: "See What We Do",
   ctaUtamaLabelPendek: "Services",
@@ -658,7 +658,7 @@ export const perjalanan: Teks<typeof id.perjalanan> = [
   {
     tahun: "2021",
     judul: "Company established",
-    body: `${company.legalName} received its NIB on 24 June 2021 as a wholesale solid fuel trading company.`,
+    body: `${company.legalName} began operating as a coal trading company.`,
   },
   {
     tahun: "2026",
